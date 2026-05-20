@@ -1,0 +1,105 @@
+﻿using BGVSystem.Application.DTOs.Document;
+using BGVSystem.Application.Interfaces;
+using BGVSystem.Domain.Entities;
+
+namespace BGVSystem.Application.Services;
+
+public class DocumentService : IDocumentService
+{
+    private readonly IDocumentRepository _documentRepository;
+
+    public DocumentService(IDocumentRepository documentRepository)
+    {
+        _documentRepository = documentRepository;
+    }
+
+    public async Task<string> UploadAsync(UploadDocumentDto dto)
+    {
+        if (dto.File == null || dto.File.Length == 0)
+        {
+            throw new Exception("File is required");
+        }
+
+        var allowedExtensions = new[] { ".pdf", ".jpg", ".jpeg", ".png" };
+
+        var extension = Path.GetExtension(dto.File.FileName).ToLower();
+
+        if (!allowedExtensions.Contains(extension))
+        {
+            throw new Exception("Invalid file type");
+        }
+
+        var uploadsFolder = Path.Combine(
+            Directory.GetCurrentDirectory(),
+            "Uploads");
+
+        if (!Directory.Exists(uploadsFolder))
+        {
+            Directory.CreateDirectory(uploadsFolder);
+        }
+
+        var uniqueFileName = $"{Guid.NewGuid()}{extension}";
+
+        var filePath = Path.Combine(
+            uploadsFolder,
+            uniqueFileName);
+
+        using (var stream = new FileStream(filePath, FileMode.Create))
+        {
+            await dto.File.CopyToAsync(stream);
+        }
+
+        var document = new Document
+        {
+            CandidateId = dto.CandidateId,
+            FileName = uniqueFileName,
+            OriginalFileName = dto.File.FileName,
+            FilePath = filePath,
+            FileType = extension,
+            FileSize = dto.File.Length,
+            Status = "Uploaded"
+        };
+
+        await _documentRepository.AddAsync(document);
+
+        await _documentRepository.SaveChangesAsync();
+
+        return "Document uploaded successfully";
+    }
+
+    public async Task<List<DocumentResponseDto>> GetByCandidateIdAsync(int candidateId)
+    {
+        var documents = await _documentRepository
+            .GetByCandidateIdAsync(candidateId);
+
+        return documents.Select(x => new DocumentResponseDto
+        {
+            Id = x.Id,
+            FileName = x.OriginalFileName,
+            FileType = x.FileType,
+            FileSize = x.FileSize,
+            Status = x.Status
+        }).ToList();
+    }
+
+    public async Task<string> DeleteAsync(int id)
+    {
+        var document = await _documentRepository.GetByIdAsync(id);
+
+        if (document == null)
+        {
+            throw new Exception("Document not found");
+        }
+
+        if (File.Exists(document.FilePath))
+        {
+            File.Delete(document.FilePath);
+        }
+
+        await _documentRepository.DeleteAsync(document);
+
+        await _documentRepository.SaveChangesAsync();
+
+        return document.FileName;
+    }
+}

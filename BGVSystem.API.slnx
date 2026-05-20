@@ -1,0 +1,8 @@
+<Solution>
+  <Project Path="BGVSystem.API/BGVSystem.API.csproj" />
+  <Project Path="BGVSystem.Application/BGVSystem.Application.csproj" />
+  <Project Path="BGVSystem.Domain/BGVSystem.Domain.csproj" />
+  <Project Path="BGVSystem.Infrastructure/BGVSystem.Infrastructure.csproj" />
+  <Project Path="BGVSystem.Persistence/BGVSystem.Persistence.csproj" />
+  <Project Path="BGVSystem.Shared/BGVSystem.Shared.csproj" />
+</Solution>
