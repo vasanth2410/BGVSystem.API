@@ -1,6 +1,7 @@
 ﻿using BGVSystem.Application.DTOs.Verifications;
 using BGVSystem.Application.Interfaces;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 
 namespace BGVSystem.API.Controllers;
 
@@ -40,22 +41,28 @@ public class VerificationController : ControllerBase
         return Ok(result);
     }
 
+    [Authorize(Roles = "Reviewer")]
     [HttpPut("approve/{id}")]
     public async Task<IActionResult> Approve(
         int id,
-        [FromQuery] string remarks)
+        string remarks)
     {
-        var result = await _verificationService.ApproveAsync(id, remarks);
+        var result =
+            await _verificationService
+                .ApproveAsync(id, remarks);
 
         return Ok(result);
     }
 
+    [Authorize(Roles = "Reviewer")]
     [HttpPut("reject/{id}")]
     public async Task<IActionResult> Reject(
-        int id,
-        [FromQuery] string remarks)
+     int id,
+     string remarks)
     {
-        var result = await _verificationService.RejectAsync(id, remarks);
+        var result =
+            await _verificationService
+                .RejectAsync(id, remarks);
 
         return Ok(result);
     }

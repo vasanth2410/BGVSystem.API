@@ -2,9 +2,11 @@
 //using BGVSystem.Application.DTOs.Candidates;
 using BGVSystem.Application.Interfaces;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 
 namespace BGVSystem.API.Controllers;
 
+[Authorize]
 [ApiController]
 [Route("api/[controller]")]
 public class CandidatesController : ControllerBase
@@ -50,10 +52,12 @@ public class CandidatesController : ControllerBase
         return Ok(result);
     }
 
+    [Authorize(Roles = "Admin")]
     [HttpDelete("{id}")]
     public async Task<IActionResult> Delete(int id)
     {
-        var result = await _candidateService.DeleteAsync(id);
+        var result =
+            await _candidateService.DeleteAsync(id);
 
         return Ok(result);
     }

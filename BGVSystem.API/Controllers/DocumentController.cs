@@ -2,6 +2,7 @@
 //using BGVSystem.Application.DTOs.Documents;
 using BGVSystem.Application.Interfaces;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 
 namespace BGVSystem.API.Controllers;
 
@@ -16,11 +17,13 @@ public class DocumentsController : ControllerBase
         _documentService = documentService;
     }
 
+    [Authorize(Roles = "Candidate")]
     [HttpPost("upload")]
     public async Task<IActionResult> Upload(
-        [FromForm] UploadDocumentDto dto)
+     [FromForm] UploadDocumentDto dto)
     {
-        var result = await _documentService.UploadAsync(dto);
+        var result =
+            await _documentService.UploadAsync(dto);
 
         return Ok(result);
     }

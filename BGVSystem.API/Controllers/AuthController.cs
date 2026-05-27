@@ -1,5 +1,4 @@
-﻿using BGVSystem.Application.DTOs;
-//using BGVSystem.Application.DTOs.Auth;
+﻿using BGVSystem.Application.DTOs.Auth;
 using BGVSystem.Application.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 

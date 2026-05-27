@@ -1,14 +1,10 @@
-﻿using BGVSystem.Application.DTOs;
-using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using BGVSystem.Application.DTOs.Auth;
 
-namespace BGVSystem.Application.Interfaces
+namespace BGVSystem.Application.Interfaces;
+
+public interface IAuthService
 {
-    public interface IAuthService
-    {
-        Task<string> RegisterAsync(RegisterRequestDto request);
+    Task<string> RegisterAsync(RegisterRequestDto dto);
 
-        Task<string> LoginAsync(LoginRequestDto request);
-    }
+    Task<AuthResponseDto> LoginAsync(LoginRequestDto dto);
 }

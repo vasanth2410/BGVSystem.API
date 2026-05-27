@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace BGVSystem.Application.DTOs
+namespace BGVSystem.Application.DTOs.Auth
 {
     public class LoginRequestDto
     {
