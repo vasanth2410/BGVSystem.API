@@ -1,23 +1,30 @@
 ﻿using BGVSystem.Application.DTOs.Document;
+using BGVSystem.Application.Exceptions;
 using BGVSystem.Application.Interfaces;
 using BGVSystem.Domain.Entities;
+using System.ComponentModel.DataAnnotations;
 
 namespace BGVSystem.Application.Services;
 
 public class DocumentService : IDocumentService
 {
     private readonly IDocumentRepository _documentRepository;
-
-    public DocumentService(IDocumentRepository documentRepository)
+    private readonly IAuditService _auditService;
+    public DocumentService(
+     IDocumentRepository documentRepository,
+     IAuditService auditService)
     {
         _documentRepository = documentRepository;
+
+        _auditService = auditService;
     }
 
     public async Task<string> UploadAsync(UploadDocumentDto dto)
     {
         if (dto.File == null || dto.File.Length == 0)
         {
-            throw new Exception("File is required");
+            throw new System.ComponentModel.DataAnnotations.ValidationException(
+    "File is required");
         }
 
         var allowedExtensions = new[] { ".pdf", ".jpg", ".jpeg", ".png" };
@@ -26,7 +33,8 @@ public class DocumentService : IDocumentService
 
         if (!allowedExtensions.Contains(extension))
         {
-            throw new Exception("Invalid file type");
+            throw new System.ComponentModel.DataAnnotations.ValidationException(
+     "Invalid file type");
         }
 
         var uploadsFolder = Path.Combine(
@@ -63,7 +71,12 @@ public class DocumentService : IDocumentService
         await _documentRepository.AddAsync(document);
 
         await _documentRepository.SaveChangesAsync();
+        // Audit Log
 
+        await _auditService.AddLogAsync(
+            "Document Uploaded",
+            "candidate@test.com",
+            "Candidate");
         return "Document uploaded successfully";
     }
 
@@ -71,6 +84,11 @@ public class DocumentService : IDocumentService
     {
         var documents = await _documentRepository
             .GetByCandidateIdAsync(candidateId);
+        if (documents == null || !documents.Any())
+        {
+            throw new NotFoundException(
+                "No documents found for this candidate");
+        }
 
         return documents.Select(x => new DocumentResponseDto
         {

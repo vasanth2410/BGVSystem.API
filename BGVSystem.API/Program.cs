@@ -1,12 +1,15 @@
+using BGVSystem.API.Middleware;
 using BGVSystem.Application.Interfaces;
 using BGVSystem.Application.Services;
+using BGVSystem.Infrastructure.BackgroundServices;
+using BGVSystem.Infrastructure.Services;
+using BGVSystem.Infrastructure.Settings;
 using BGVSystem.Persistence.Context;
 using BGVSystem.Persistence.Repositories;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
-
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -17,6 +20,12 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(
         builder.Configuration.GetConnectionString("DefaultConnection")));
 
+builder.Services.Configure<EmailSettings>(
+    builder.Configuration.GetSection(
+        "EmailSettings"));
+builder.Services
+    .AddHostedService<
+        NotificationWorker>();
 // Dependency Injection
 
 builder.Services.AddScoped<IAuthService, AuthService>();
@@ -32,6 +41,14 @@ builder.Services.AddScoped<IVerificationRepository, VerificationRepository>();
 builder.Services.AddScoped<IVerificationService, VerificationService>();
 
 builder.Services.AddScoped<IJwtService, JwtService>();
+builder.Services.AddScoped<IEmailTemplateService,EmailTemplateService>();
+builder.Services.AddScoped<IAuditRepository, AuditRepository>();
+builder.Services.AddScoped<IAuditService, AuditService>();
+
+builder.Services.AddScoped<IEmailService, EmailService>();
+
+builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
+builder.Services.AddScoped<INotificationService, NotificationService>();
 
 // JWT Authentication
 
@@ -126,7 +143,9 @@ app.UseHttpsRedirection();
 
 app.UseStaticFiles();
 
-// Authentication Middleware
+// Global Exception Middleware
+
+app.UseMiddleware<ExceptionMiddleware>();
 
 app.UseAuthentication();
 

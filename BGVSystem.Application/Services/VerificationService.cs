@@ -1,4 +1,5 @@
 ﻿using BGVSystem.Application.DTOs.Verifications;
+using BGVSystem.Application.Exceptions;
 using BGVSystem.Application.Interfaces;
 using BGVSystem.Domain.Entities;
 
@@ -9,13 +10,17 @@ public class VerificationService : IVerificationService
     private readonly IVerificationRepository _verificationRepository;
 
     private readonly ICandidateRepository _candidateRepository;
-
+    private readonly IAuditService _auditService;
     public VerificationService(
-        IVerificationRepository verificationRepository,
-        ICandidateRepository candidateRepository)
+    IVerificationRepository verificationRepository,
+    ICandidateRepository candidateRepository,
+    IAuditService auditService)
     {
         _verificationRepository = verificationRepository;
+
         _candidateRepository = candidateRepository;
+
+        _auditService = auditService;
     }
 
     public async Task<string> CreateAsync(CreateVerificationDto dto)
@@ -58,11 +63,13 @@ public class VerificationService : IVerificationService
 
     public async Task<VerificationResponseDto?> GetByIdAsync(int id)
     {
-        var verification = await _verificationRepository.GetByIdAsync(id);
+        var verification =
+            await _verificationRepository.GetByIdAsync(id);
 
         if (verification == null)
         {
-            return null;
+            throw new NotFoundException(
+                $"Verification with Id {id} was not found.");
         }
 
         return new VerificationResponseDto
@@ -75,20 +82,33 @@ public class VerificationService : IVerificationService
         };
     }
 
-    public async Task<string> ApproveAsync(int id, string remarks)
+    public async Task<string> ApproveAsync(
+    int id,
+    string remarks)
     {
-        var verification = await _verificationRepository.GetByIdAsync(id);
+        var verification =
+            await _verificationRepository
+                .GetByIdAsync(id);
 
         if (verification == null)
         {
-            throw new Exception("Verification not found");
+            throw new NotFoundException(
+    "Verification not found");
         }
 
         verification.Status = "Approved";
 
         verification.ReviewerRemarks = remarks;
 
-        await _verificationRepository.SaveChangesAsync();
+        await _verificationRepository
+            .SaveChangesAsync();
+
+        // Audit Log
+
+        await _auditService.AddLogAsync(
+            "Verification Approved",
+            "reviewer@test.com",
+            "Reviewer");
 
         return "Verification approved successfully";
     }

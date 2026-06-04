@@ -1,6 +1,7 @@
 ﻿using BGVSystem.Application.DTOs.Auth;
 using BGVSystem.Application.Interfaces;
 using BGVSystem.Domain.Entities;
+using BGVSystem.Application.Exceptions;
 
 namespace BGVSystem.Application.Services;
 
@@ -10,12 +11,18 @@ public class AuthService : IAuthService
 
     private readonly IJwtService _jwtService;
 
+    private readonly IAuditService _auditService;
+
     public AuthService(
-     IUserRepository userRepository,
-     IJwtService jwtService)
+    IUserRepository userRepository,
+    IJwtService jwtService,
+    IAuditService auditService)
     {
         _userRepository = userRepository;
+
         _jwtService = jwtService;
+
+        _auditService = auditService;
     }
 
     public async Task<string> RegisterAsync(RegisterRequestDto dto)
@@ -54,7 +61,8 @@ public class AuthService : IAuthService
 
         if (user == null)
         {
-            throw new Exception("Invalid email");
+            throw new UnauthorizedException(
+     "Invalid email or password");
         }
 
         var isPasswordValid =
@@ -64,10 +72,18 @@ public class AuthService : IAuthService
 
         if (!isPasswordValid)
         {
-            throw new Exception("Invalid password");
+            throw new UnauthorizedException(
+    "Invalid email or password");
         }
 
         var token = _jwtService.GenerateToken(user);
+
+        // Audit Log
+
+        await _auditService.AddLogAsync(
+            "User Logged In",
+            user.Email,
+            user.Role.Name);
 
         return new AuthResponseDto
         {

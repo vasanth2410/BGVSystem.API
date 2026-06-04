@@ -19,4 +19,8 @@ public class ApplicationDbContext : DbContext
     public DbSet<Document> Documents => Set<Document>();
 
     public DbSet<Verification> Verifications { get; set; }
+
+    public DbSet<AuditLog> AuditLogs { get; set; }
+
+    public DbSet<Notification> Notifications { get; set; }
 }
