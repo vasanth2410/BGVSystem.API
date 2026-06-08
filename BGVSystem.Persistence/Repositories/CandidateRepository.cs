@@ -48,4 +48,12 @@ public class CandidateRepository : ICandidateRepository
     {
         await _context.SaveChangesAsync();
     }
+
+    public async Task<Candidate?> GetByEmailAsync(
+    string email)
+    {
+        return await _context.Candidates
+            .FirstOrDefaultAsync(x =>
+                x.Email == email);
+    }
 }

@@ -50,6 +50,7 @@ builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 
+builder.Services.AddScoped<ICandidatePortalService, CandidatePortalService>();
 // JWT Authentication
 
 builder.Services.AddAuthentication(

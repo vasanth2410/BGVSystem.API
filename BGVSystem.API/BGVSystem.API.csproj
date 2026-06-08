@@ -7,6 +7,8 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="EmailTemplates\TextFile.html" />
+    <None Remove="EmailTemplates\WelcomeCandidate.html" />
     <None Remove="WelcomeCandidate.http" />
   </ItemGroup>
 

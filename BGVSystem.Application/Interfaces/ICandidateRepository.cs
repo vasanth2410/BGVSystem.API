@@ -15,4 +15,7 @@ public interface ICandidateRepository
     Task DeleteAsync(Candidate candidate);
 
     Task SaveChangesAsync();
+
+    Task<Candidate?> GetByEmailAsync(
+    string email);
 }
