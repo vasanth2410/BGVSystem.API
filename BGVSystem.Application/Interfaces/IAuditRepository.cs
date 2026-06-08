@@ -9,4 +9,6 @@ public interface IAuditRepository
     Task<List<AuditLog>> GetAllAsync();
 
     Task SaveChangesAsync();
+
+    Task<int> GetCountAsync();
 }

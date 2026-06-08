@@ -43,4 +43,9 @@ public class DocumentRepository : IDocumentRepository
     {
         await _context.SaveChangesAsync();
     }
+
+    public async Task<int> GetCountAsync()
+    {
+        return await _context.Documents.CountAsync();
+    }
 }

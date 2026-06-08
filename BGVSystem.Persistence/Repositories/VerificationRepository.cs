@@ -33,4 +33,24 @@ public class VerificationRepository : IVerificationRepository
     {
         await _context.SaveChangesAsync();
     }
+
+    public async Task<List<Verification>>
+    GetByStatusAsync(string status)
+    {
+        return await _context.Verifications
+            .Where(x => x.Status == status)
+            .ToListAsync();
+    }
+
+    public async Task<int> GetCountAsync()
+    {
+        return await _context.Verifications.CountAsync();
+    }
+
+    public async Task<int> GetCountByStatusAsync(
+        string status)
+    {
+        return await _context.Verifications
+            .CountAsync(x => x.Status == status);
+    }
 }

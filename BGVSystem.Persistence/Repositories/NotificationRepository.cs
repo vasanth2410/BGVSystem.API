@@ -64,4 +64,10 @@ public class NotificationRepository
                 x.Status == "DeadLetter")
             .ToListAsync();
     }
+
+    public async Task<int> GetSentCountAsync()
+    {
+        return await _context.Notifications
+            .CountAsync(x => x.Status == "Sent");
+    }
 }

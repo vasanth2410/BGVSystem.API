@@ -33,4 +33,9 @@ public class AuditRepository : IAuditRepository
     {
         await _context.SaveChangesAsync();
     }
+
+    public async Task<int> GetCountAsync()
+    {
+        return await _context.AuditLogs.CountAsync();
+    }
 }

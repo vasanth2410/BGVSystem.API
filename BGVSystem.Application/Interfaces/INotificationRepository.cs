@@ -17,4 +17,6 @@ public interface INotificationRepository
     Task SaveChangesAsync();
     Task<List<Notification>> GetDeadLettersAsync();
 
+    Task<int> GetSentCountAsync();
+
 }

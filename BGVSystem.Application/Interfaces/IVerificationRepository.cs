@@ -14,5 +14,11 @@ namespace BGVSystem.Application.Interfaces
         Task<Verification?> GetByIdAsync(int id);
 
         Task SaveChangesAsync();
+
+        Task<List<Verification>> GetByStatusAsync(string status);
+
+        Task<int> GetCountAsync();
+
+        Task<int> GetCountByStatusAsync(string status);
     }
 }

@@ -51,6 +51,11 @@ builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 
 builder.Services.AddScoped<ICandidatePortalService, CandidatePortalService>();
+
+builder.Services.AddScoped<IReviewerService, ReviewerService>();
+
+builder.Services.AddScoped<IAdminService, AdminService>();
+
 // JWT Authentication
 
 builder.Services.AddAuthentication(
