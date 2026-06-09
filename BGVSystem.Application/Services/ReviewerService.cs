@@ -1,4 +1,5 @@
 ﻿using BGVSystem.Application.DTOs.Reviewer;
+using BGVSystem.Application.DTOs.ReviewerAssignments;
 using BGVSystem.Application.DTOs.Verifications;
 using BGVSystem.Application.Interfaces;
 
@@ -11,15 +12,24 @@ public class ReviewerService : IReviewerService
     private readonly IDocumentRepository _documentRepository;
 
     private readonly IVerificationRepository _verificationRepository;
+    private readonly IAssignmentRepository
+    _assignmentRepository;
 
+    private readonly IUserRepository
+        _userRepository;
     public ReviewerService(
         ICandidateRepository candidateRepository,
         IDocumentRepository documentRepository,
-        IVerificationRepository verificationRepository)
+        IVerificationRepository verificationRepository,
+        IAssignmentRepository assignmentRepository,
+        IUserRepository userRepository
+        )
     {
         _candidateRepository = candidateRepository;
         _documentRepository = documentRepository;
         _verificationRepository = verificationRepository;
+        _assignmentRepository = assignmentRepository;
+        _userRepository = userRepository;
     }
 
     public async Task<ReviewerDashboardDto>
@@ -116,5 +126,58 @@ public class ReviewerService : IReviewerService
                 ReviewerRemarks =
                     x.ReviewerRemarks
             }).ToList();
+    }
+
+    public async Task<List<AssignedCandidateDto>>
+    GetAssignedCandidatesAsync(
+        string reviewerEmail)
+    {
+        var reviewer =
+            await _userRepository
+                .GetByEmailAsync(
+                    reviewerEmail);
+
+        if (reviewer == null)
+        {
+            throw new Exception(
+                "Reviewer not found");
+        }
+
+        var assignments =
+            await _assignmentRepository
+                .GetByReviewerIdAsync(
+                    reviewer.Id);
+
+        var result =
+            new List<AssignedCandidateDto>();
+
+        foreach (var assignment in assignments)
+        {
+            var candidate =
+                await _candidateRepository
+                    .GetByIdAsync(
+                        assignment.CandidateId);
+
+            if (candidate == null)
+                continue;
+
+            result.Add(
+                new AssignedCandidateDto
+                {
+                    CandidateId =
+                        candidate.Id,
+
+                    FullName =
+                        candidate.FullName,
+
+                    Email =
+                        candidate.Email,
+
+                    Status =
+                        candidate.Status
+                });
+        }
+
+        return result;
     }
 }

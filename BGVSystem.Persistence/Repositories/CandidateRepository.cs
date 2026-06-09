@@ -61,4 +61,12 @@ public class CandidateRepository : ICandidateRepository
     {
         return await _context.Candidates.CountAsync();
     }
+
+    public async Task<List<Candidate>>
+    GetByStatusAsync(string status)
+    {
+        return await _context.Candidates
+            .Where(x => x.Status == status)
+            .ToListAsync();
+    }
 }

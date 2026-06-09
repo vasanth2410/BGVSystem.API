@@ -1,6 +1,7 @@
 ﻿using BGVSystem.Application.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace BGVSystem.API.Controllers;
 
@@ -57,6 +58,22 @@ public class ReviewerController : ControllerBase
         var result =
             await _reviewerService
                 .GetRejectedVerificationsAsync();
+
+        return Ok(result);
+    }
+
+    [HttpGet("assigned-candidates")]
+    public async Task<IActionResult>
+    AssignedCandidates()
+    {
+        var email =
+            User.FindFirstValue(
+                ClaimTypes.Email);
+
+        var result =
+            await _reviewerService
+                .GetAssignedCandidatesAsync(
+                    email!);
 
         return Ok(result);
     }

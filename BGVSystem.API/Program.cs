@@ -53,13 +53,21 @@ builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<ICandidatePortalService, CandidatePortalService>();
 
 builder.Services.AddScoped<IReviewerService, ReviewerService>();
+builder.Services.AddScoped<
+    IAssignmentRepository,
+    AssignmentRepository>();
 
+builder.Services.AddScoped<
+    IAssignmentService,
+    AssignmentService>();
 builder.Services
     .AddScoped<IReviewerDocumentService,
                ReviewerDocumentService>();
 
 builder.Services.AddScoped<IAdminService, AdminService>();
-
+builder.Services.AddScoped<
+    IAdminDashboardService,
+    AdminDashboardService>();
 // JWT Authentication
 
 builder.Services.AddAuthentication(

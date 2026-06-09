@@ -24,5 +24,9 @@ public class ApplicationDbContext : DbContext
 
     public DbSet<Notification> Notifications { get; set; }
 
-    
+    public DbSet<CandidateAssignment>
+    CandidateAssignments
+    { get; set; }
+
+
 }

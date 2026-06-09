@@ -1,0 +1,49 @@
+﻿using BGVSystem.Application.DTOs.Assignments;
+using BGVSystem.Application.Interfaces;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+
+namespace BGVSystem.API.Controllers
+{
+    [ApiController]
+    [Route("api/[controller]")]
+    [Authorize(Roles = "Admin")]
+    public class AssignmentController
+    : ControllerBase
+    {
+        private readonly IAssignmentService
+            _assignmentService;
+
+        public AssignmentController(
+            IAssignmentService
+                assignmentService)
+        {
+            _assignmentService =
+                assignmentService;
+        }
+
+        [HttpPost]
+        public async Task<IActionResult>
+            Create(
+                CreateAssignmentDto dto)
+        {
+            var result =
+                await _assignmentService
+                    .CreateAsync(dto);
+
+            return Ok(result);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult>
+            GetAll()
+        {
+            var result =
+                await _assignmentService
+                    .GetAllAsync();
+
+            return Ok(result);
+        }
+    }
+}

@@ -20,4 +20,6 @@ public interface ICandidateRepository
     string email);
 
     Task<int> GetCountAsync();
+
+    Task<List<Candidate>> GetByStatusAsync(string status);
 }

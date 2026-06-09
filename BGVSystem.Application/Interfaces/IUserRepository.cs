@@ -12,5 +12,7 @@ namespace BGVSystem.Application.Interfaces
         Task AddAsync(User user);
 
         Task SaveChangesAsync();
+
+        Task<User?> GetByIdAsync(int id);
     }
 }
