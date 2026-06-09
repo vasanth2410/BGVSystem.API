@@ -30,7 +30,7 @@ public class DocumentRepository : IDocumentRepository
     {
         return await _context.Documents
             .FirstOrDefaultAsync(x => x.Id == id);
-    }
+    }   
 
     public async Task DeleteAsync(Document document)
     {
@@ -47,5 +47,10 @@ public class DocumentRepository : IDocumentRepository
     public async Task<int> GetCountAsync()
     {
         return await _context.Documents.CountAsync();
+    }
+
+    public async Task<List<Document>> GetAllAsync()
+    {
+        return await _context.Documents.ToListAsync();
     }
 }

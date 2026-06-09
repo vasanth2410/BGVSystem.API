@@ -83,8 +83,8 @@ public class VerificationService : IVerificationService
     }
 
     public async Task<string> ApproveAsync(
-    int id,
-    string remarks)
+     int id,
+     string remarks)
     {
         var verification =
             await _verificationRepository
@@ -93,17 +93,32 @@ public class VerificationService : IVerificationService
         if (verification == null)
         {
             throw new NotFoundException(
-    "Verification not found");
+                "Verification not found");
         }
 
         verification.Status = "Approved";
 
-        verification.ReviewerRemarks = remarks;
+        verification.ReviewerRemarks =
+            remarks;
+
+        var candidate =
+            await _candidateRepository
+                .GetByIdAsync(
+                    verification.CandidateId);
+
+        if (candidate == null)
+        {
+            throw new NotFoundException(
+                "Candidate not found");
+        }
+
+        candidate.Status = "Approved";
 
         await _verificationRepository
             .SaveChangesAsync();
 
-        // Audit Log
+        await _candidateRepository
+            .SaveChangesAsync();
 
         await _auditService.AddLogAsync(
             "Verification Approved",
@@ -113,20 +128,48 @@ public class VerificationService : IVerificationService
         return "Verification approved successfully";
     }
 
-    public async Task<string> RejectAsync(int id, string remarks)
+    public async Task<string> RejectAsync(
+     int id,
+     string remarks)
     {
-        var verification = await _verificationRepository.GetByIdAsync(id);
+        var verification =
+            await _verificationRepository
+                .GetByIdAsync(id);
 
         if (verification == null)
         {
-            throw new Exception("Verification not found");
+            throw new NotFoundException(
+                "Verification not found");
         }
 
         verification.Status = "Rejected";
 
-        verification.ReviewerRemarks = remarks;
+        verification.ReviewerRemarks =
+            remarks;
 
-        await _verificationRepository.SaveChangesAsync();
+        var candidate =
+            await _candidateRepository
+                .GetByIdAsync(
+                    verification.CandidateId);
+
+        if (candidate == null)
+        {
+            throw new NotFoundException(
+                "Candidate not found");
+        }
+
+        candidate.Status = "Rejected";
+
+        await _verificationRepository
+            .SaveChangesAsync();
+
+        await _candidateRepository
+            .SaveChangesAsync();
+
+        await _auditService.AddLogAsync(
+            "Verification Rejected",
+            "reviewer@test.com",
+            "Reviewer");
 
         return "Verification rejected successfully";
     }

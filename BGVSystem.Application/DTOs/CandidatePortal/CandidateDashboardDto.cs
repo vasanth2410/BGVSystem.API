@@ -1,19 +1,16 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿namespace BGVSystem.Application.DTOs.CandidatePortal;
 
-namespace BGVSystem.Application.DTOs.CandidatePortal
+public class CandidateDashboardDto
 {
-    public class CandidateDashboardDto
-    {
-        public string CandidateName { get; set; } = string.Empty;
+    public string CandidateName { get; set; } = string.Empty;
 
-        public string Status { get; set; } = string.Empty;
+    public int DocumentsUploaded { get; set; }
 
-        public int UploadedDocuments { get; set; }
+    public int ApprovedDocuments { get; set; }
 
-        public int RequiredDocuments { get; set; }
-    }
+    public int PendingDocuments { get; set; }
+
+    public int RejectedDocuments { get; set; }
+
+    public string OverallStatus { get; set; } = string.Empty;
 }

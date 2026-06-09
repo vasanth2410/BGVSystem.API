@@ -54,6 +54,10 @@ builder.Services.AddScoped<ICandidatePortalService, CandidatePortalService>();
 
 builder.Services.AddScoped<IReviewerService, ReviewerService>();
 
+builder.Services
+    .AddScoped<IReviewerDocumentService,
+               ReviewerDocumentService>();
+
 builder.Services.AddScoped<IAdminService, AdminService>();
 
 // JWT Authentication

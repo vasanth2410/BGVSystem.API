@@ -12,6 +12,9 @@ public interface IDocumentRepository
 
     Task DeleteAsync(Document document);
 
+
+    Task<List<Document>> GetAllAsync();
+
     Task SaveChangesAsync();
 
     Task<int> GetCountAsync();

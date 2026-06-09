@@ -9,4 +9,7 @@ public interface ICandidatePortalService
 
     Task<CandidateDashboardDto?> GetDashboardAsync(
         string email);
+
+    Task<List<CandidateVerificationDto>>
+     GetVerificationStatusAsync(string email);
 }

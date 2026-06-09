@@ -23,4 +23,6 @@ public class ApplicationDbContext : DbContext
     public DbSet<AuditLog> AuditLogs { get; set; }
 
     public DbSet<Notification> Notifications { get; set; }
+
+    
 }

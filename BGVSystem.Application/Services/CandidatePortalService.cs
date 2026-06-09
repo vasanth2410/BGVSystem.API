@@ -1,5 +1,7 @@
 ﻿using BGVSystem.Application.DTOs.CandidatePortal;
 using BGVSystem.Application.Interfaces;
+using BGVSystem.Domain.Entities;
+using Microsoft.AspNetCore.Http;
 
 namespace BGVSystem.Application.Services;
 
@@ -11,6 +13,7 @@ public class CandidatePortalService
 
     private readonly IDocumentRepository
         _documentRepository;
+
 
     public CandidatePortalService(
         ICandidateRepository candidateRepository,
@@ -47,7 +50,7 @@ public class CandidatePortalService
     }
 
     public async Task<CandidateDashboardDto?>
-        GetDashboardAsync(string email)
+       GetDashboardAsync(string email)
     {
         var candidate =
             await _candidateRepository
@@ -63,18 +66,69 @@ public class CandidatePortalService
                 .GetByCandidateIdAsync(
                     candidate.Id);
 
+        var approved =
+            documents.Count(x =>
+                x.Status == "Approved");
+
+        var pending =
+            documents.Count(x =>
+                x.Status == "Pending");
+
+        var rejected =
+            documents.Count(x =>
+                x.Status == "Rejected");
+
+        string overallStatus;
+
+        if (rejected > 0)
+        {
+            overallStatus = "Rejected";
+        }
+        else if (pending == 0 && approved > 0)
+        {
+            overallStatus = "Completed";
+        }
+        else
+        {
+            overallStatus = "In Progress";
+        }
+
         return new CandidateDashboardDto
         {
-            CandidateName =
-                candidate.FullName,
-
-            Status =
-                candidate.Status,
-
-            UploadedDocuments =
-                documents.Count,
-
-            RequiredDocuments = 4
+            CandidateName = candidate.FullName,
+            DocumentsUploaded = documents.Count,
+            ApprovedDocuments = approved,
+            PendingDocuments = pending,
+            RejectedDocuments = rejected,
+            OverallStatus = overallStatus
         };
+    }
+    public async Task<List<CandidateVerificationDto>>
+    GetVerificationStatusAsync(string email)
+    {
+        var candidate =
+            await _candidateRepository
+                .GetByEmailAsync(email);
+
+        if (candidate == null)
+        {
+            throw new Exception(
+                "Candidate not found");
+        }
+
+        var documents =
+            await _documentRepository
+                .GetByCandidateIdAsync(
+                    candidate.Id);
+
+        return documents
+            .Select(x =>
+                new CandidateVerificationDto
+                {
+                    DocumentId = x.Id,
+                    FileName = x.OriginalFileName,
+                    Status = x.Status
+                })
+            .ToList();
     }
 }

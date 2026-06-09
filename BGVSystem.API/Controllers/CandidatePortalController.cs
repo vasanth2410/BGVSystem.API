@@ -7,9 +7,8 @@ namespace BGVSystem.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize]
-public class CandidatePortalController
-    : ControllerBase
+[Authorize(Roles = "Candidate")]
+public class CandidatePortalController : ControllerBase
 {
     private readonly
         ICandidatePortalService
@@ -49,6 +48,21 @@ public class CandidatePortalController
         var result =
             await _candidatePortalService
                 .GetDashboardAsync(email!);
+
+        return Ok(result);
+    }
+
+    [HttpGet("verifications")]
+    public async Task<IActionResult>
+GetVerifications()
+    {
+        var email =
+            User.FindFirstValue(
+                ClaimTypes.Email);
+
+        var result =
+            await _candidatePortalService
+                .GetVerificationStatusAsync(email!);
 
         return Ok(result);
     }
