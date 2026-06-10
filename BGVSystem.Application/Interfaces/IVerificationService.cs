@@ -16,5 +16,7 @@ namespace BGVSystem.Application.Interfaces
         Task<string> ApproveAsync(int id, string remarks);
 
         Task<string> RejectAsync(int id, string remarks);
+
+        Task UpdateCandidateStatusAsync(int candidateId);
     }
 }

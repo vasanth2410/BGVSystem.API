@@ -180,4 +180,182 @@ public class ReviewerService : IReviewerService
 
         return result;
     }
+
+    public async Task<CandidateWorkQueueDto?>
+GetCandidateAsync(
+    int candidateId)
+    {
+        var candidate =
+            await _candidateRepository
+                .GetByIdAsync(candidateId);
+
+        if (candidate == null)
+        {
+            return null;
+        }
+
+        return new CandidateWorkQueueDto
+        {
+            CandidateId = candidate.Id,
+            FullName = candidate.FullName,
+            Email = candidate.Email,
+            Status = candidate.Status
+        };
+    }
+
+    public async Task<List<CandidateDocumentDto>>
+GetCandidateDocumentsAsync(
+    int candidateId)
+    {
+        var documents =
+            await _documentRepository
+                .GetByCandidateIdAsync(
+                    candidateId);
+
+        return documents
+            .Select(x =>
+                new CandidateDocumentDto
+                {
+                    Id = x.Id,
+                    FileName =
+                        x.OriginalFileName,
+                    Status = x.Status,
+                    FileType = x.FileType
+                })
+            .ToList();
+    }
+
+    public async Task<List<VerificationResponseDto>>
+GetCandidateVerificationsAsync(
+    int candidateId)
+    {
+        var items =
+            await _verificationRepository
+                .GetByCandidateIdAsync(
+                    candidateId);
+
+        return items
+            .Select(x =>
+                new VerificationResponseDto
+                {
+                    Id = x.Id,
+                    CandidateId =
+                        x.CandidateId,
+                    VerificationType =
+                        x.VerificationType,
+                    Status = x.Status,
+                    ReviewerRemarks =
+                        x.ReviewerRemarks
+                })
+            .ToList();
+    }
+    private async Task<bool>
+IsAssignedReviewerAsync(
+    int candidateId,
+    string reviewerEmail)
+    {
+        var reviewer =
+            await _userRepository
+                .GetByEmailAsync(
+                    reviewerEmail);
+
+        if (reviewer == null)
+            return false;
+
+        var assignments =
+            await _assignmentRepository
+                .GetByReviewerIdAsync(
+                    reviewer.Id);
+
+        return assignments.Any(x =>
+            x.CandidateId ==
+            candidateId);
+    }
+
+    public async Task<ReviewerDocumentDto?>
+GetDocumentAsync(
+    int documentId,
+    string reviewerEmail)
+    {
+        var document =
+            await _documentRepository
+                .GetByIdAsync(
+                    documentId);
+
+        if (document == null)
+        {
+            return null;
+        }
+
+        var assigned =
+            await IsAssignedReviewerAsync(
+                document.CandidateId,
+                reviewerEmail);
+
+        if (!assigned)
+        {
+            throw new Exception(
+                "Access denied");
+        }
+
+        return new ReviewerDocumentDto
+        {
+            Id = document.Id,
+
+            FileName =
+                document.FileName,
+
+            OriginalFileName =
+                document.OriginalFileName,
+
+            Status =
+                document.Status,
+
+            FileType =
+                document.FileType
+        };
+    }
+
+    public async Task<
+(
+byte[] Content,
+string FileName,
+string ContentType
+)>
+DownloadDocumentAsync(
+    int documentId,
+    string reviewerEmail)
+    {
+        var document =
+            await _documentRepository
+                .GetByIdAsync(
+                    documentId);
+
+        if (document == null)
+        {
+            throw new Exception(
+                "Document not found");
+        }
+
+        var assigned =
+            await IsAssignedReviewerAsync(
+                document.CandidateId,
+                reviewerEmail);
+
+        if (!assigned)
+        {
+            throw new Exception(
+                "Access denied");
+        }
+
+        var bytes =
+            await File.ReadAllBytesAsync(
+                document.FilePath);
+
+        return (
+            bytes,
+            document.OriginalFileName,
+            "application/octet-stream"
+        );
+    }
 }

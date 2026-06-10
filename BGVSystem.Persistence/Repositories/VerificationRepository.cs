@@ -53,4 +53,14 @@ public class VerificationRepository : IVerificationRepository
         return await _context.Verifications
             .CountAsync(x => x.Status == status);
     }
+
+    public async Task<List<Verification>>
+    GetByCandidateIdAsync(
+        int candidateId)
+    {
+        return await _context.Verifications
+            .Where(x =>
+                x.CandidateId == candidateId)
+            .ToListAsync();
+    }
 }

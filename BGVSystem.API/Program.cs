@@ -56,7 +56,9 @@ builder.Services.AddScoped<IReviewerService, ReviewerService>();
 builder.Services.AddScoped<
     IAssignmentRepository,
     AssignmentRepository>();
-
+builder.Services.AddScoped<
+    IReportService,
+    ReportService>();
 builder.Services.AddScoped<
     IAssignmentService,
     AssignmentService>();

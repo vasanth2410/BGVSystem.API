@@ -77,4 +77,79 @@ public class ReviewerController : ControllerBase
 
         return Ok(result);
     }
+
+    [HttpGet("candidate/{candidateId}")]
+    public async Task<IActionResult>
+GetCandidate(int candidateId)
+    {
+        var result =
+            await _reviewerService
+                .GetCandidateAsync(
+                    candidateId);
+
+        return Ok(result);
+    }
+
+    [HttpGet("candidate/{candidateId}/documents")]
+    public async Task<IActionResult>
+GetDocuments(int candidateId)
+    {
+        var result =
+            await _reviewerService
+                .GetCandidateDocumentsAsync(
+                    candidateId);
+
+        return Ok(result);
+    }
+
+    [HttpGet("candidate/{candidateId}/verifications")]
+    public async Task<IActionResult>
+GetVerifications(int candidateId)
+    {
+        var result =
+            await _reviewerService
+                .GetCandidateVerificationsAsync(
+                    candidateId);
+
+        return Ok(result);
+    }
+
+    [HttpGet("document/{documentId}")]
+    public async Task<IActionResult>
+GetDocument(
+    int documentId)
+    {
+        var email =
+            User.FindFirstValue(
+                ClaimTypes.Email);
+
+        var result =
+            await _reviewerService
+                .GetDocumentAsync(
+                    documentId,
+                    email!);
+
+        return Ok(result);
+    }
+
+    [HttpGet("document/download/{documentId}")]
+    public async Task<IActionResult>
+DownloadDocument(
+    int documentId)
+    {
+        var email =
+            User.FindFirstValue(
+                ClaimTypes.Email);
+
+        var result =
+            await _reviewerService
+                .DownloadDocumentAsync(
+                    documentId,
+                    email!);
+
+        return File(
+            result.Content,
+            result.ContentType,
+            result.FileName);
+    }
 }

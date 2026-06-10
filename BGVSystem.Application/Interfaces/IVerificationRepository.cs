@@ -20,5 +20,8 @@ namespace BGVSystem.Application.Interfaces
         Task<int> GetCountAsync();
 
         Task<int> GetCountByStatusAsync(string status);
+
+        Task<List<Verification>>GetByCandidateIdAsync(int candidateId);
+
     }
 }

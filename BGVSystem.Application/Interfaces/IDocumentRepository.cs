@@ -18,4 +18,6 @@ public interface IDocumentRepository
     Task SaveChangesAsync();
 
     Task<int> GetCountAsync();
+
+    
 }

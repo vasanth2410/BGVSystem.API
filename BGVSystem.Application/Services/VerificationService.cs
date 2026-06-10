@@ -117,6 +117,9 @@ public class VerificationService : IVerificationService
         await _verificationRepository
             .SaveChangesAsync();
 
+        await UpdateCandidateStatusAsync(
+    verification.CandidateId);
+
         await _candidateRepository
             .SaveChangesAsync();
 
@@ -163,6 +166,9 @@ public class VerificationService : IVerificationService
         await _verificationRepository
             .SaveChangesAsync();
 
+        await UpdateCandidateStatusAsync(
+    verification.CandidateId);
+
         await _candidateRepository
             .SaveChangesAsync();
 
@@ -172,5 +178,45 @@ public class VerificationService : IVerificationService
             "Reviewer");
 
         return "Verification rejected successfully";
+    }
+
+    public async Task UpdateCandidateStatusAsync(
+     int candidateId)
+    {
+        var candidate =
+            await _candidateRepository
+                .GetByIdAsync(candidateId);
+
+        if (candidate == null)
+        {
+            return;
+        }
+
+        var verifications =
+            await _verificationRepository
+                .GetByCandidateIdAsync(candidateId);
+
+        if (!verifications.Any())
+        {
+            return;
+        }
+
+        if (verifications.Any(x =>
+            x.Status == "Rejected"))
+        {
+            candidate.Status = "Rejected";
+        }
+        else if (verifications.All(x =>
+            x.Status == "Approved"))
+        {
+            candidate.Status = "Verified";
+        }
+        else
+        {
+            candidate.Status = "In Progress";
+        }
+
+        await _candidateRepository
+            .SaveChangesAsync();
     }
 }
