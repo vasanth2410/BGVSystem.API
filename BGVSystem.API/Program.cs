@@ -104,6 +104,19 @@ builder.Services.AddControllers();
 // Swagger Configuration
 
 builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy(
+        "ReactPolicy",
+        policy =>
+        {
+            policy
+                .AllowAnyHeader()
+                .AllowAnyMethod()
+                .AllowAnyOrigin();
+        });
+});
+
 
 builder.Services.AddSwaggerGen(c =>
 {
@@ -141,6 +154,8 @@ builder.Services.AddSwaggerGen(c =>
     });
 });
 
+
+
 var app = builder.Build();
 
 // Swagger Middleware
@@ -166,7 +181,7 @@ app.UseStaticFiles();
 // Global Exception Middleware
 
 app.UseMiddleware<ExceptionMiddleware>();
-
+app.UseCors("ReactPolicy");
 app.UseAuthentication();
 
 app.UseAuthorization();
