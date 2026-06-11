@@ -46,5 +46,16 @@ namespace BGVSystem.API.Controllers
 
             return Ok(result);
         }
+
+        [HttpGet("summary")]
+        public async Task<IActionResult>
+    GetSummary()
+        {
+            var result =
+                await _adminDashboardService
+                    .GetSummaryAsync();
+
+            return Ok(result);
+        }
     }
 }

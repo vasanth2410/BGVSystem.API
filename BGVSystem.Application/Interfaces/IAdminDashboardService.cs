@@ -9,13 +9,12 @@ namespace BGVSystem.Application.Interfaces
 {
     public interface IAdminDashboardService
     {
-        Task<List<CandidateWorkQueueDto>>
-    GetPendingCandidatesAsync();
+        Task<List<CandidateWorkQueueDto>> GetPendingCandidatesAsync();
 
-        Task<List<CandidateWorkQueueDto>>
-            GetCompletedCandidatesAsync();
+        Task<List<CandidateWorkQueueDto>> GetCompletedCandidatesAsync();
 
-        Task<List<CandidateWorkQueueDto>>
-            GetRejectedCandidatesAsync();
+        Task<List<CandidateWorkQueueDto>> GetRejectedCandidatesAsync();
+
+        Task<DashboardSummaryDto> GetSummaryAsync();
     }
 }

@@ -72,5 +72,38 @@ namespace BGVSystem.Application.Services
                     })
                 .ToList();
         }
+
+        public async Task<DashboardSummaryDto>
+    GetSummaryAsync()
+        {
+            var pending =
+                await _candidateRepository
+                    .GetByStatusAsync("Pending");
+
+            var completed =
+                await _candidateRepository
+                    .GetByStatusAsync("Completed");
+
+            var rejected =
+                await _candidateRepository
+                    .GetByStatusAsync("Rejected");
+
+            return new DashboardSummaryDto
+            {
+                PendingCandidates =
+                    pending.Count,
+
+                CompletedCandidates =
+                    completed.Count,
+
+                RejectedCandidates =
+                    rejected.Count,
+
+                TotalCandidates =
+                    pending.Count +
+                    completed.Count +
+                    rejected.Count
+            };
+        }
     }
 }
