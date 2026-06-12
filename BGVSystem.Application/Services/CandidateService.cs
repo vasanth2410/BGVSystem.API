@@ -46,6 +46,7 @@ public class CandidateService : ICandidateService
             Id = x.Id,
             FullName = x.FullName,
             Email = x.Email,
+            PhoneNumber = x.PhoneNumber,
             Status = x.Status
         }).ToList();
     }
@@ -67,6 +68,7 @@ public class CandidateService : ICandidateService
             Id = candidate.Id,
             FullName = candidate.FullName,
             Email = candidate.Email,
+            PhoneNumber = candidate.PhoneNumber,
             Status = candidate.Status
         };
     }

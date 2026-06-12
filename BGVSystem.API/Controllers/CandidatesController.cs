@@ -35,9 +35,12 @@ public class CandidatesController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<IActionResult> Create(CreateCandidateDto dto)
+    public async Task<IActionResult> Create(
+        [FromBody] CreateCandidateDto dto)
     {
-        var result = await _candidateService.CreateAsync(dto);
+        var result =
+            await _candidateService
+                .CreateAsync(dto);
 
         return Ok(result);
     }
