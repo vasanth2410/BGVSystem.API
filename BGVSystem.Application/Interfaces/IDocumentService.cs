@@ -1,5 +1,6 @@
 ﻿using BGVSystem.Application.DTOs.Document;
 //using BGVSystem.Application.DTOs.Documents;
+using BGVSystem.Domain.Entities;
 
 namespace BGVSystem.Application.Interfaces;
 
@@ -10,4 +11,6 @@ public interface IDocumentService
     Task<List<DocumentResponseDto>> GetByCandidateIdAsync(int candidateId);
 
     Task<string> DeleteAsync(int id);
+
+    Task<Document?> GetDocumentByIdAsync(int id);
 }

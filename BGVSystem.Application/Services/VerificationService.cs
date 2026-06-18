@@ -209,7 +209,7 @@ public class VerificationService : IVerificationService
         else if (verifications.All(x =>
             x.Status == "Approved"))
         {
-            candidate.Status = "Verified";
+            candidate.Status = "Approved";
         }
         else
         {

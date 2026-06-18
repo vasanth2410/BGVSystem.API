@@ -8,7 +8,7 @@ namespace BGVSystem.API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize(Roles = "Admin")]
+    //[Authorize(Roles = "Admin")]
     public class AssignmentController
     : ControllerBase
     {
@@ -42,6 +42,17 @@ namespace BGVSystem.API.Controllers
             var result =
                 await _assignmentService
                     .GetAllAsync();
+
+            return Ok(result);
+        }
+
+        [HttpGet("reviewer/{reviewerId}")]
+        public async Task<IActionResult>
+    GetByReviewerId(int reviewerId)
+        {
+            var result =
+                await _assignmentService
+                    .GetByReviewerIdAsync(reviewerId);
 
             return Ok(result);
         }

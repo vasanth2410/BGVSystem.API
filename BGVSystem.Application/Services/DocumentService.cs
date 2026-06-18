@@ -120,4 +120,12 @@ public class DocumentService : IDocumentService
 
         return document.FileName;
     }
+
+    public async Task<Document?>
+GetDocumentByIdAsync(int id)
+{
+    return await
+        _documentRepository
+            .GetByIdAsync(id);
+}
 }

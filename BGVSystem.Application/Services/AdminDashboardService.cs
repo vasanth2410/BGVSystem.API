@@ -40,7 +40,7 @@ namespace BGVSystem.Application.Services
         {
             var candidates =
                 await _candidateRepository
-                    .GetByStatusAsync("Completed");
+                    .GetByStatusAsync("Approved");
 
             return candidates
                 .Select(x =>
@@ -73,8 +73,7 @@ namespace BGVSystem.Application.Services
                 .ToList();
         }
 
-        public async Task<DashboardSummaryDto>
-    GetSummaryAsync()
+        public async Task<DashboardSummaryDto> GetSummaryAsync()
         {
             var pending =
                 await _candidateRepository
@@ -82,11 +81,14 @@ namespace BGVSystem.Application.Services
 
             var completed =
                 await _candidateRepository
-                    .GetByStatusAsync("Completed");
+                    .GetByStatusAsync("Approved");
 
             var rejected =
                 await _candidateRepository
                     .GetByStatusAsync("Rejected");
+            var totalCandidates =
+    await _candidateRepository
+        .GetTotalCountAsync();
 
             return new DashboardSummaryDto
             {
@@ -99,10 +101,8 @@ namespace BGVSystem.Application.Services
                 RejectedCandidates =
                     rejected.Count,
 
-                TotalCandidates =
-                    pending.Count +
-                    completed.Count +
-                    rejected.Count
+                TotalCandidates = totalCandidates
+
             };
         }
     }

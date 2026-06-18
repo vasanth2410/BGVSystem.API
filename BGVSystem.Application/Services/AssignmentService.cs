@@ -98,17 +98,47 @@ namespace BGVSystem.Application.Services
                     .GetAllAsync();
 
             return assignments
-                .Select(x =>
-                    new AssignmentResponseDto
-                    {
-                        Id = x.Id,
-                        CandidateId =
-                            x.CandidateId,
-                        ReviewerId =
-                            x.ReviewerId,
-                        AssignedDate =
-                            x.AssignedDate
-                    })
+    .Select(x =>
+        new AssignmentResponseDto
+        {
+            Id = x.Id,
+
+            CandidateId =
+                x.CandidateId,
+
+            CandidateName =
+                x.Candidate.FullName,
+
+            ReviewerId =
+                x.ReviewerId,
+
+            ReviewerName =
+                x.Reviewer.FullName,
+
+            AssignedDate =
+                x.AssignedDate
+        })
+    .ToList();
+
+        }
+
+        public async Task<List<AssignmentResponseDto>>
+    GetByReviewerIdAsync(int reviewerId)
+        {
+            var assignments =
+                await _assignmentRepository
+                    .GetByReviewerIdAsync(reviewerId);
+
+            return assignments
+                .Select(x => new AssignmentResponseDto
+                {
+                    Id = x.Id,
+                    CandidateId = x.CandidateId,
+                    CandidateName = x.Candidate.FullName,
+                    ReviewerId = x.ReviewerId,
+                    ReviewerName = x.Reviewer.FullName,
+                    AssignedDate = x.AssignedDate
+                })
                 .ToList();
         }
     }

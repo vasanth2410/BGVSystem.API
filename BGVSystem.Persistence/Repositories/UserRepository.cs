@@ -36,4 +36,13 @@ public class UserRepository : IUserRepository
         return await _context.Users
             .FirstOrDefaultAsync(x => x.Id == id);
     }
+
+    public async Task<List<User>>
+    GetReviewersAsync()
+    {
+        return await _context.Users
+            .Where(x => x.RoleId == 2)
+            .ToListAsync();
+    }
+
 }

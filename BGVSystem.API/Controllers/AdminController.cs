@@ -26,4 +26,15 @@ public class AdminController : ControllerBase
 
         return Ok(result);
     }
+
+    [HttpGet("reviewers")]
+    public async Task<IActionResult>
+    GetReviewers()
+    {
+        var result =
+            await _adminService
+                .GetReviewersAsync();
+
+        return Ok(result);
+    }
 }

@@ -14,5 +14,7 @@ namespace BGVSystem.Application.Interfaces
         Task SaveChangesAsync();
 
         Task<User?> GetByIdAsync(int id);
+
+        Task<List<User>> GetReviewersAsync();
     }
 }

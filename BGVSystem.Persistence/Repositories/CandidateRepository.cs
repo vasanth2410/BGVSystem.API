@@ -57,7 +57,7 @@ public class CandidateRepository : ICandidateRepository
                 x.Email == email);
     }
 
-    public async Task<int> GetCountAsync()
+    public async Task<int> GetTotalCountAsync()
     {
         return await _context.Candidates.CountAsync();
     }

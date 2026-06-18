@@ -15,5 +15,8 @@ namespace BGVSystem.Application.Interfaces
 
         Task<List<AssignmentResponseDto>>
             GetAllAsync();
+
+        Task<List<AssignmentResponseDto>>
+    GetByReviewerIdAsync(int reviewerId);
     }
 }

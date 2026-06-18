@@ -30,19 +30,23 @@ namespace BGVSystem.Persistence.Repositories
         }
 
         public async Task<List<CandidateAssignment>>
-            GetAllAsync()
+    GetAllAsync()
         {
             return await _context
                 .CandidateAssignments
+                .Include(x => x.Candidate)
+                .Include(x => x.Reviewer)
                 .ToListAsync();
         }
 
         public async Task<List<CandidateAssignment>>
-            GetByReviewerIdAsync(
-                int reviewerId)
+    GetByReviewerIdAsync(
+        int reviewerId)
         {
             return await _context
                 .CandidateAssignments
+                .Include(x => x.Candidate)
+                .Include(x => x.Reviewer)
                 .Where(x =>
                     x.ReviewerId ==
                     reviewerId)

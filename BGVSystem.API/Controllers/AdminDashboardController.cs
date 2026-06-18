@@ -25,7 +25,7 @@ namespace BGVSystem.API.Controllers
             return Ok(result);
         }
 
-        [HttpGet("completed-candidates")]
+        [HttpGet("approved-candidates")]
         public async Task<IActionResult>
     GetCompletedCandidates()
         {

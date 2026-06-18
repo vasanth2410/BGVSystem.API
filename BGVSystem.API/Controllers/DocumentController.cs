@@ -17,7 +17,7 @@ public class DocumentsController : ControllerBase
         _documentService = documentService;
     }
 
-    [Authorize(Roles = "Candidate")]
+    //[Authorize(Roles = "Candidate")]
     [HttpPost("upload")]
     public async Task<IActionResult> Upload(
      [FromForm] UploadDocumentDto dto)
@@ -43,5 +43,35 @@ public class DocumentsController : ControllerBase
         await _documentService.DeleteAsync(id);
 
         return Ok("Document deleted successfully");
+    }
+
+    [HttpGet("download/{id}")]
+public async Task<IActionResult> DownloadDocument(
+    int id)
+{
+    var document =
+        await _documentService
+            .GetDocumentByIdAsync(id);
+
+    if (document == null)
+    {
+        return NotFound();
+    }
+
+        var filePath = document.FilePath;
+        if (!System.IO.File.Exists(filePath))
+    {
+        return NotFound(
+            "File not found");
+    }
+
+    var fileBytes =
+        await System.IO.File
+            .ReadAllBytesAsync(filePath);
+
+        return File(
+        fileBytes,
+        "application/octet-stream",
+        document.OriginalFileName);
     }
 }

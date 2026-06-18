@@ -15,18 +15,22 @@ public class AdminService : IAdminService
 
     private readonly IAuditRepository _auditRepository;
 
+    private readonly IUserRepository _userRepository;
+
     public AdminService(
         ICandidateRepository candidateRepository,
         IDocumentRepository documentRepository,
         IVerificationRepository verificationRepository,
         INotificationRepository notificationRepository,
-        IAuditRepository auditRepository)
+        IAuditRepository auditRepository,
+        IUserRepository userRepository)
     {
         _candidateRepository = candidateRepository;
         _documentRepository = documentRepository;
         _verificationRepository = verificationRepository;
         _notificationRepository = notificationRepository;
         _auditRepository = auditRepository;
+        _userRepository = userRepository;
     }
 
     public async Task<AdminDashboardDto>
@@ -35,7 +39,7 @@ public class AdminService : IAdminService
         return new AdminDashboardDto
         {
             TotalCandidates =
-                await _candidateRepository.GetCountAsync(),
+                await _candidateRepository.GetTotalCountAsync(),
 
             TotalDocuments =
                 await _documentRepository.GetCountAsync(),
@@ -62,5 +66,21 @@ public class AdminService : IAdminService
             AuditLogsCount =
                 await _auditRepository.GetCountAsync()
         };
+    }
+
+    public async Task<List<ReviewerDto>> GetReviewersAsync()
+    {
+        var reviewers =
+            await _userRepository
+                .GetReviewersAsync();
+
+        return reviewers
+            .Select(x =>
+                new ReviewerDto
+                {
+                    Id = x.Id,
+                    FullName = x.FullName
+                })
+            .ToList();
     }
 }

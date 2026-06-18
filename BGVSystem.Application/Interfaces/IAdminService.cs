@@ -10,5 +10,7 @@ namespace BGVSystem.Application.Interfaces
     public interface IAdminService
     {
         Task<AdminDashboardDto> GetDashboardAsync();
+
+        Task<List<ReviewerDto>> GetReviewersAsync();
     }
 }
