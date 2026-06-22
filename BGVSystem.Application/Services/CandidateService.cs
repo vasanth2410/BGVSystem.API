@@ -5,6 +5,7 @@ using BGVSystem.Domain.Entities;
 using BGVSystem.Application.Exceptions;
 namespace BGVSystem.Application.Services;
 using BGVSystem.Application.DTOs.Notifications;
+using BGVSystem.Application.DTOs.Candidates;
 
 public class CandidateService : ICandidateService
 {
@@ -212,5 +213,64 @@ public class CandidateService : ICandidateService
             "Admin");
 
         return "Candidate deleted successfully";
+    }
+
+    public async Task<
+    List<CandidateResponseDto>>
+SearchAsync(
+    CandidateSearchDto dto)
+    {
+        var candidates =
+            await _candidateRepository
+                .SearchAsync(dto);
+
+        return candidates
+            .Select(x =>
+                new CandidateResponseDto
+                {
+                    Id = x.Id,
+                    FullName = x.FullName,
+                    Email = x.Email,
+                    PhoneNumber = x.PhoneNumber,
+                    Status = x.Status
+                })
+            .ToList();
+    }
+
+    public async Task<List<CandidateResponseDto>>
+GetDeletedCandidatesAsync()
+    {
+        var candidates =
+            await _candidateRepository
+                .GetDeletedCandidatesAsync();
+
+        return candidates
+            .Select(x => new CandidateResponseDto
+            {
+                Id = x.Id,
+                FullName = x.FullName,
+                Email = x.Email,
+                PhoneNumber = x.PhoneNumber,
+                Status = x.Status
+            })
+            .ToList();
+    }
+
+    public async Task<string>
+RestoreAsync(int id)
+    {
+        await _candidateRepository
+            .RestoreAsync(id);
+
+        return "Candidate restored successfully";
+    }
+
+    public async Task<string>
+PermanentDeleteAsync(int id)
+    {
+        await _candidateRepository
+            .PermanentDeleteAsync(id);
+
+        return "Candidate permanently deleted";
     }
 }

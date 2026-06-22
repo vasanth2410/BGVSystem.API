@@ -5,7 +5,8 @@ namespace BGVSystem.Persistence.Context;
 
 public class ApplicationDbContext : DbContext
 {
-    public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
+    public ApplicationDbContext(
+        DbContextOptions<ApplicationDbContext> options)
         : base(options)
     {
     }
@@ -25,8 +26,15 @@ public class ApplicationDbContext : DbContext
     public DbSet<Notification> Notifications { get; set; }
 
     public DbSet<CandidateAssignment>
-    CandidateAssignments
+        CandidateAssignments
     { get; set; }
 
+    protected override void OnModelCreating(
+        ModelBuilder modelBuilder)
+    {
+        base.OnModelCreating(modelBuilder);
 
+        modelBuilder.Entity<Candidate>()
+            .HasQueryFilter(x => !x.IsDeleted);
+    }
 }

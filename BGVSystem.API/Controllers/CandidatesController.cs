@@ -1,8 +1,10 @@
 ﻿using BGVSystem.Application.DTOs;
+using BGVSystem.Application.DTOs.Candidates;
 //using BGVSystem.Application.DTOs.Candidates;
 using BGVSystem.Application.Interfaces;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using BGVSystem.Application.DTOs.Candidates;
 
 namespace BGVSystem.API.Controllers;
 
@@ -61,6 +63,52 @@ public class CandidatesController : ControllerBase
     {
         var result =
             await _candidateService.DeleteAsync(id);
+
+        return Ok(result);
+    }
+
+    [HttpGet("search")]
+    public async Task<IActionResult>
+Search(
+    [FromQuery]
+    CandidateSearchDto dto)
+    {
+        var result =
+            await _candidateService
+                .SearchAsync(dto);
+
+        return Ok(result);
+    }
+
+    [Authorize(Roles = "Admin")]
+    [HttpGet("deleted")]
+    public async Task<IActionResult> GetDeletedCandidates()
+    {
+        var result =
+            await _candidateService
+                .GetDeletedCandidatesAsync();
+
+        return Ok(result);
+    }
+
+    [Authorize(Roles = "Admin")]
+    [HttpPut("restore/{id}")]
+    public async Task<IActionResult> Restore(int id)
+    {
+        var result =
+            await _candidateService
+                .RestoreAsync(id);
+
+        return Ok(result);
+    }
+
+    [Authorize(Roles = "Admin")]
+    [HttpDelete("permanent/{id}")]
+    public async Task<IActionResult> PermanentDelete(int id)
+    {
+        var result =
+            await _candidateService
+                .PermanentDeleteAsync(id);
 
         return Ok(result);
     }

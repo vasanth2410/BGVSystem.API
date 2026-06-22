@@ -35,4 +35,8 @@ public class Candidate
 
     public ICollection<Verification> Verifications { get; set; } = new List<Verification>();
 
+    public bool IsDeleted { get; set; } = false;
+
+    public DateTime? DeletedAt { get; set; }
+
 }

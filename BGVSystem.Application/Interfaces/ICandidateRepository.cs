@@ -1,5 +1,7 @@
 ﻿using BGVSystem.Domain.Entities;
 
+using BGVSystem.Application.DTOs.Candidates;
+
 namespace BGVSystem.Application.Interfaces;
 
 public interface ICandidateRepository
@@ -23,4 +25,12 @@ public interface ICandidateRepository
     Task<int> GetTotalCountAsync();
 
     Task<List<Candidate>> GetByStatusAsync(string status);
+
+    Task<List<Candidate>> SearchAsync(CandidateSearchDto dto);
+
+    Task<List<Candidate>> GetDeletedCandidatesAsync();
+
+    Task RestoreAsync(int id);
+
+    Task PermanentDeleteAsync(int id);
 }

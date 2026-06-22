@@ -50,21 +50,20 @@ public class ReviewerService : IReviewerService
             await _verificationRepository
                 .GetByStatusAsync("Rejected");
 
+        var totalDocuments =
+     await _documentRepository.GetCountAsync();
+
         return new ReviewerDashboardDto
         {
             TotalCandidates = candidates.Count,
 
-            TotalDocuments = candidates
-                .Sum(x => x.Documents?.Count ?? 0),
+            TotalDocuments = totalDocuments,
 
-            PendingVerifications =
-                pending.Count,
+            PendingVerifications = pending.Count,
 
-            ApprovedVerifications =
-                approved.Count,
+            ApprovedVerifications = approved.Count,
 
-            RejectedVerifications =
-                rejected.Count
+            RejectedVerifications = rejected.Count
         };
     }
 
