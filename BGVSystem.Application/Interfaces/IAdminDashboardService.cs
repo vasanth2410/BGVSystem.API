@@ -16,5 +16,7 @@ namespace BGVSystem.Application.Interfaces
         Task<List<CandidateWorkQueueDto>> GetRejectedCandidatesAsync();
 
         Task<DashboardSummaryDto> GetSummaryAsync();
+
+        Task<List<RecentCandidateDto>> GetRecentCandidatesAsync();
     }
 }

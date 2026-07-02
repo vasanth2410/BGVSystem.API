@@ -57,5 +57,15 @@ namespace BGVSystem.API.Controllers
 
             return Ok(result);
         }
+
+        [HttpGet("recent-candidates")]
+        public async Task<IActionResult> GetRecentCandidates()
+        {
+            var result =
+                await _adminDashboardService
+                    .GetRecentCandidatesAsync();
+
+            return Ok(result);
+        }
     }
 }

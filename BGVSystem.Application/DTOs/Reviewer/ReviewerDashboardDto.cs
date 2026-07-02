@@ -8,14 +8,14 @@ namespace BGVSystem.Application.DTOs.Reviewer
 {
     public class ReviewerDashboardDto
     {
-        public int TotalCandidates { get; set; }
+        public int Assigned { get; set; }
 
-        public int TotalDocuments { get; set; }
+        public int Pending { get; set; }
 
-        public int PendingVerifications { get; set; }
+        public int Approved { get; set; }
 
-        public int ApprovedVerifications { get; set; }
+        public int Rejected { get; set; }
 
-        public int RejectedVerifications { get; set; }
+        public double CompletionPercentage { get; set; }
     }
 }

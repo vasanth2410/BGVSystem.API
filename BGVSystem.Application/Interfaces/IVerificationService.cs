@@ -1,4 +1,5 @@
 ﻿using BGVSystem.Application.DTOs.Verifications;
+using BGVSystem.Application.DTOs.Reviewer;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -18,5 +19,12 @@ namespace BGVSystem.Application.Interfaces
         Task<string> RejectAsync(int id, string remarks);
 
         Task UpdateCandidateStatusAsync(int candidateId);
+
+        Task<string> ReReviewAsync(int id);
+
+        // Dashboard Statistics
+        Task<ReviewerDashboardDto> GetDashboardStatisticsAsync();
+
+        Task<List<VerificationResponseDto>> GetByCandidateIdAsync(int candidateId);
     }
 }

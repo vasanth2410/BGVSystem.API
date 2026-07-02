@@ -66,4 +66,47 @@ GetVerifications()
 
         return Ok(result);
     }
+
+    [HttpPost("upload")]
+    public async Task<IActionResult> UploadDocument(
+    IFormFile file)
+    {
+        var email =
+            User.FindFirstValue(ClaimTypes.Email);
+
+        var result =
+            await _candidatePortalService
+                .UploadDocumentAsync(email!, file);
+
+        return Ok(result);
+    }
+
+    [HttpGet("documents")]
+    public async Task<IActionResult> GetDocuments()
+    {
+        var email =
+            User.FindFirstValue(ClaimTypes.Email);
+
+        var result =
+            await _candidatePortalService
+                .GetDocumentsAsync(email!);
+
+        return Ok(result);
+    }
+
+    [HttpGet("download/{id}")]
+    public async Task<IActionResult> Download(int id)
+    {
+        var email =
+            User.FindFirstValue(ClaimTypes.Email);
+
+        var result =
+            await _candidatePortalService
+                .DownloadDocumentAsync(email!, id);
+
+        return File(
+            result!.FileBytes,
+            result.ContentType,
+            result.FileName);
+    }
 }

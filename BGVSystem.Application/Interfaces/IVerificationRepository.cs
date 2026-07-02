@@ -21,7 +21,22 @@ namespace BGVSystem.Application.Interfaces
 
         Task<int> GetCountByStatusAsync(string status);
 
-        Task<List<Verification>>GetByCandidateIdAsync(int candidateId);
+        Task<List<Verification>> GetByCandidateIdAsync(int candidateId);
 
+        // ===========================
+        // Dashboard Statistics
+        // ===========================
+
+        Task<int> GetAssignedCountAsync();
+
+        Task<int> GetPendingCountAsync();
+
+        Task<int> GetApprovedCountAsync();
+
+        Task<int> GetRejectedCountAsync();
+
+        Task<Verification?> GetByCandidateAndTypeAsync(
+    int candidateId,
+    string verificationType);
     }
 }

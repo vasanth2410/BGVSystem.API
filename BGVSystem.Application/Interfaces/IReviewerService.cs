@@ -33,4 +33,10 @@ GetDocumentAsync(
     DownloadDocumentAsync(
         int documentId,
         string reviewerEmail);
+
+    Task<string> ReviewDocumentAsync(
+    int documentId,
+    string reviewerEmail,
+    ReviewDocumentDto dto);
+
 }

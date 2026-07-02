@@ -63,4 +63,38 @@ public class VerificationRepository : IVerificationRepository
                 x.CandidateId == candidateId)
             .ToListAsync();
     }
+
+         //    Additional methods for dashboard statistics
+    public async Task<int> GetAssignedCountAsync()
+    {
+        return await _context.Verifications.CountAsync();
+    }
+
+    public async Task<int> GetPendingCountAsync()
+    {
+        return await _context.Verifications
+            .CountAsync(x => x.Status == "Pending");
+    }
+
+    public async Task<int> GetApprovedCountAsync()
+    {
+        return await _context.Verifications
+            .CountAsync(x => x.Status == "Approved");
+    }
+
+    public async Task<int> GetRejectedCountAsync()
+    {
+        return await _context.Verifications
+            .CountAsync(x => x.Status == "Rejected");
+    }
+
+    public async Task<Verification?> GetByCandidateAndTypeAsync(
+    int candidateId,
+    string verificationType)
+    {
+        return await _context.Verifications
+            .FirstOrDefaultAsync(x =>
+                x.CandidateId == candidateId &&
+                x.VerificationType == verificationType);
+    }
 }

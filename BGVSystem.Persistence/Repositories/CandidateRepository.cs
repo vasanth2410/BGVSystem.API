@@ -161,4 +161,13 @@ SearchAsync(
 
         await _context.SaveChangesAsync();
     }
+
+    public async Task<List<Candidate>> GetRecentCandidatesAsync()
+    {
+        return await _context.Candidates
+            .Where(x => !x.IsDeleted)
+            .OrderByDescending(x => x.CreatedDate)
+            .Take(10)
+            .ToListAsync();
+    }
 }

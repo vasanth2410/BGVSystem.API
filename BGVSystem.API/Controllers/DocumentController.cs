@@ -74,4 +74,15 @@ public async Task<IActionResult> DownloadDocument(
         "application/octet-stream",
         document.OriginalFileName);
     }
+
+    [HttpGet]
+    public async Task<IActionResult>
+GetAll()
+    {
+        var result =
+            await _documentService
+                .GetAllAsync();
+
+        return Ok(result);
+    }
 }

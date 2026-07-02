@@ -6,7 +6,7 @@ namespace BGVSystem.API.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
-[Authorize(Roles = "Admin")]
+[Authorize(Roles = "Admin,Reviewer")]
 public class NotificationController : ControllerBase
 {
     private readonly INotificationService _notificationService;

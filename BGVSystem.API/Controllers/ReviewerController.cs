@@ -1,4 +1,5 @@
-﻿using BGVSystem.Application.Interfaces;
+﻿using BGVSystem.Application.DTOs.Reviewer;
+using BGVSystem.Application.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
@@ -152,4 +153,25 @@ DownloadDocument(
             result.ContentType,
             result.FileName);
     }
+
+    [HttpPut("document/{documentId}/review")]
+    public async Task<IActionResult> ReviewDocument(
+    int documentId,
+    ReviewDocumentDto dto)
+    {
+        var email =
+            User.FindFirstValue(
+                ClaimTypes.Email);
+
+        var result =
+            await _reviewerService
+                .ReviewDocumentAsync(
+                    documentId,
+                    email!,
+                    dto);
+
+        return Ok(result);
+    }
+
+   
 }

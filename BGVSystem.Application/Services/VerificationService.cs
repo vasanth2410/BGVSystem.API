@@ -2,7 +2,7 @@
 using BGVSystem.Application.Exceptions;
 using BGVSystem.Application.Interfaces;
 using BGVSystem.Domain.Entities;
-
+using BGVSystem.Application.DTOs.Reviewer;
 namespace BGVSystem.Application.Services;
 
 public class VerificationService : IVerificationService
@@ -219,4 +219,93 @@ public class VerificationService : IVerificationService
         await _candidateRepository
             .SaveChangesAsync();
     }
+
+    public async Task<string> ReReviewAsync(int id)
+    {
+        var verification =
+            await _verificationRepository
+                .GetByIdAsync(id);
+
+        if (verification == null)
+        {
+            throw new NotFoundException(
+                "Verification not found");
+        }
+
+        verification.Status = "Pending";
+
+        verification.ReviewerRemarks =
+            string.Empty;
+
+        await _verificationRepository
+            .SaveChangesAsync();
+
+        await UpdateCandidateStatusAsync(
+            verification.CandidateId);
+
+        await _auditService.AddLogAsync(
+            "Verification Reopened",
+            "reviewer@test.com",
+            "Reviewer");
+
+        return "Verification moved back to Pending.";
+    }
+    public async Task<ReviewerDashboardDto> GetDashboardStatisticsAsync()
+    {
+        var assigned =
+            await _verificationRepository
+                .GetAssignedCountAsync();
+
+        var pending =
+            await _verificationRepository
+                .GetPendingCountAsync();
+
+        var approved =
+            await _verificationRepository
+                .GetApprovedCountAsync();
+
+        var rejected =
+            await _verificationRepository
+                .GetRejectedCountAsync();
+
+        double completionPercentage = 0;
+
+        if (assigned > 0)
+        {
+            completionPercentage =
+                Math.Round(
+                    (double)approved / assigned * 100,
+                    2
+                );
+        }
+
+        return new ReviewerDashboardDto
+        {
+            Assigned = assigned,
+            Pending = pending,
+            Approved = approved,
+            Rejected = rejected,
+            CompletionPercentage = completionPercentage
+        };
+    }
+
+    public async Task<List<VerificationResponseDto>>
+GetByCandidateIdAsync(int candidateId)
+    {
+        var verifications =
+            await _verificationRepository
+                .GetByCandidateIdAsync(candidateId);
+
+        return verifications
+            .Select(x => new VerificationResponseDto
+            {
+                Id = x.Id,
+                CandidateId = x.CandidateId,
+                VerificationType = x.VerificationType,
+                Status = x.Status,
+                ReviewerRemarks = x.ReviewerRemarks
+            })
+            .ToList();
+    }
+
 }

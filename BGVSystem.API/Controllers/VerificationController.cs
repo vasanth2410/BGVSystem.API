@@ -66,4 +66,35 @@ public class VerificationController : ControllerBase
 
         return Ok(result);
     }
+
+    [Authorize(Roles = "Reviewer")]
+    [HttpPut("rereview/{id}")]
+    public async Task<IActionResult> ReReview(int id)
+    {
+        var result =
+            await _verificationService
+                .ReReviewAsync(id);
+
+        return Ok(result);
+    }
+
+    [HttpGet("dashboard")]
+    public async Task<IActionResult> GetDashboardStatistics()
+    {
+        var result =
+            await _verificationService
+                .GetDashboardStatisticsAsync();
+
+        return Ok(result);
+    }
+
+    [HttpGet("candidate/{candidateId}")]
+    public async Task<IActionResult> GetByCandidate(int candidateId)
+    {
+        var result =
+            await _verificationService
+                .GetByCandidateIdAsync(candidateId);
+
+        return Ok(result);
+    }
 }

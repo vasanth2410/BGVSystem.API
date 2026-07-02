@@ -128,4 +128,34 @@ GetDocumentByIdAsync(int id)
         _documentRepository
             .GetByIdAsync(id);
 }
+
+    public async Task<List<DocumentResponseDto>>
+GetAllAsync()
+    {
+        var documents =
+            await _documentRepository
+                .GetAllAsync();
+
+        return documents.Select(x =>
+     new DocumentResponseDto
+     {
+         Id = x.Id,
+
+         CandidateId =
+             x.CandidateId,
+
+         FileName =
+             x.OriginalFileName,
+
+         FileType =
+             x.FileType,
+
+         FileSize =
+             x.FileSize,
+
+         Status =
+             x.Status
+     }).ToList();
+
+    }
 }

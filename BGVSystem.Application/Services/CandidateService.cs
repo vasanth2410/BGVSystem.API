@@ -273,4 +273,31 @@ PermanentDeleteAsync(int id)
 
         return "Candidate permanently deleted";
     }
+
+    public async Task<CandidateDetailsDto?> GetDetailsAsync(int id)
+    {
+        var candidate =
+            await _candidateRepository.GetByIdAsync(id);
+
+        if (candidate == null)
+        {
+            throw new NotFoundException("Candidate not found");
+        }
+
+        return new CandidateDetailsDto
+        {
+            Id = candidate.Id,
+            FullName = candidate.FullName,
+            Email = candidate.Email,
+            PhoneNumber = candidate.PhoneNumber,
+            Address = candidate.Address,
+            DateOfBirth = candidate.DateOfBirth,
+            Gender = candidate.Gender,
+            PANNumber = candidate.PANNumber,
+            AadhaarNumber = candidate.AadhaarNumber,
+            AppliedRole = candidate.AppliedRole,
+            DateOfJoining = candidate.DateOfJoining,
+            Status = candidate.Status
+        };
+    }
 }

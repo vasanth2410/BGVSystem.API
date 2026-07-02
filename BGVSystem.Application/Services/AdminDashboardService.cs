@@ -105,5 +105,23 @@ namespace BGVSystem.Application.Services
 
             };
         }
+
+        public async Task<List<RecentCandidateDto>> GetRecentCandidatesAsync()
+        {
+            var candidates =
+                await _candidateRepository
+                    .GetRecentCandidatesAsync();
+
+            return candidates
+                .Select(x => new RecentCandidateDto
+                {
+                    CandidateId = x.Id,
+                    FullName = x.FullName,
+                    Email = x.Email,
+                    Status = x.Status,
+                    CreatedDate = x.CreatedDate
+                })
+                .ToList();
+        }
     }
 }

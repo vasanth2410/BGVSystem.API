@@ -33,4 +33,6 @@ public interface ICandidateRepository
     Task RestoreAsync(int id);
 
     Task PermanentDeleteAsync(int id);
+
+    Task<List<Candidate>> GetRecentCandidatesAsync();
 }

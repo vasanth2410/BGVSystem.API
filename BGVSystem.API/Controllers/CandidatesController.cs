@@ -112,4 +112,14 @@ Search(
 
         return Ok(result);
     }
+
+    [Authorize(Roles = "Admin")]
+    [HttpGet("details/{id}")]
+    public async Task<IActionResult> GetDetails(int id)
+    {
+        var result =
+            await _candidateService.GetDetailsAsync(id);
+
+        return Ok(result);
+    }
 }

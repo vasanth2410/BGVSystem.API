@@ -23,4 +23,6 @@ public interface ICandidateService
     Task<string> RestoreAsync(int id);
 
     Task<string> PermanentDeleteAsync(int id);
+
+    Task<CandidateDetailsDto?> GetDetailsAsync(int id);
 }

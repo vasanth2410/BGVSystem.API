@@ -53,17 +53,29 @@ public class ReviewerService : IReviewerService
         var totalDocuments =
      await _documentRepository.GetCountAsync();
 
+        double completionPercentage = 0;
+
+        if (candidates.Count > 0)
+        {
+            completionPercentage =
+                Math.Round(
+                    (double)approved.Count /
+                    candidates.Count * 100,
+                    2
+                );
+        }
+
         return new ReviewerDashboardDto
         {
-            TotalCandidates = candidates.Count,
+            Assigned = candidates.Count,
 
-            TotalDocuments = totalDocuments,
+            Pending = pending.Count,
 
-            PendingVerifications = pending.Count,
+            Approved = approved.Count,
 
-            ApprovedVerifications = approved.Count,
+            Rejected = rejected.Count,
 
-            RejectedVerifications = rejected.Count
+            CompletionPercentage = completionPercentage
         };
     }
 
@@ -356,5 +368,84 @@ DownloadDocumentAsync(
             document.OriginalFileName,
             "application/octet-stream"
         );
+    }
+
+    public async Task<string> ReviewDocumentAsync(
+    int documentId,
+    string reviewerEmail,
+    ReviewDocumentDto dto)
+    {
+        var document =
+            await _documentRepository
+                .GetByIdAsync(documentId);
+
+        if (document == null)
+        {
+            throw new Exception("Document not found");
+        }
+
+        var assigned =
+            await IsAssignedReviewerAsync(
+                document.CandidateId,
+                reviewerEmail);
+
+        if (!assigned)
+        {
+            throw new Exception("Access denied");
+        }
+
+        if (dto.Status != "Approved" &&
+            dto.Status != "Rejected")
+        {
+            throw new Exception(
+                "Status must be Approved or Rejected");
+        }
+
+        document.Status = dto.Status;
+
+        var verification =
+            await _verificationRepository
+                .GetByCandidateAndTypeAsync(
+                    document.CandidateId,
+                    document.OriginalFileName);
+
+        if (verification != null)
+        {
+            verification.Status = dto.Status;
+
+            verification.ReviewerRemarks =
+                dto.ReviewerRemarks;
+        }
+
+        var candidate =
+            await _candidateRepository
+                .GetByIdAsync(document.CandidateId);
+
+        if (candidate != null)
+        {
+            var documents =
+                await _documentRepository
+                    .GetByCandidateIdAsync(candidate.Id);
+
+            if (documents.All(x => x.Status == "Approved"))
+            {
+                candidate.Status = "Completed";
+            }
+            else if (documents.Any(x => x.Status == "Rejected"))
+            {
+                candidate.Status = "Rejected";
+            }
+            else
+            {
+                candidate.Status = "In Progress";
+            }
+
+            await _candidateRepository.UpdateAsync(candidate);
+            await _candidateRepository.SaveChangesAsync();
+        }
+
+        await _verificationRepository.SaveChangesAsync();
+
+        return "Document reviewed successfully.";
     }
 }
