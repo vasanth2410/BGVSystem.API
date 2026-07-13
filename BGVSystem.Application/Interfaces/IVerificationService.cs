@@ -26,5 +26,10 @@ namespace BGVSystem.Application.Interfaces
         Task<ReviewerDashboardDto> GetDashboardStatisticsAsync();
 
         Task<List<VerificationResponseDto>> GetByCandidateIdAsync(int candidateId);
+
+        Task<List<VerificationResponseDto>>
+GetReviewerCandidateVerificationsAsync(
+    int candidateId,
+    int reviewerId);
     }
 }

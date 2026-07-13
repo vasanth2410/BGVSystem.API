@@ -2,6 +2,8 @@
 using BGVSystem.Application.DTOs.ReviewerAssignments;
 using BGVSystem.Application.DTOs.Verifications;
 using BGVSystem.Application.Interfaces;
+using BGVSystem.Domain.Entities;
+using DocumentFormat.OpenXml.Spreadsheet;
 
 namespace BGVSystem.Application.Services;
 
@@ -140,24 +142,21 @@ public class ReviewerService : IReviewerService
     }
 
     public async Task<List<AssignedCandidateDto>>
-    GetAssignedCandidatesAsync(
-        string reviewerEmail)
+GetAssignedCandidatesAsync(
+    string reviewerEmail)
     {
         var reviewer =
             await _userRepository
-                .GetByEmailAsync(
-                    reviewerEmail);
+                .GetByEmailAsync(reviewerEmail);
 
         if (reviewer == null)
         {
-            throw new Exception(
-                "Reviewer not found");
+            throw new Exception("Reviewer not found");
         }
 
         var assignments =
             await _assignmentRepository
-                .GetByReviewerIdAsync(
-                    reviewer.Id);
+                .GetByReviewerIdAsync(reviewer.Id);
 
         var result =
             new List<AssignedCandidateDto>();
@@ -175,17 +174,19 @@ public class ReviewerService : IReviewerService
             result.Add(
                 new AssignedCandidateDto
                 {
-                    CandidateId =
-                        candidate.Id,
+                    AssignmentId = assignment.Id,
 
-                    FullName =
-                        candidate.FullName,
+                    CandidateId = candidate.Id,
 
-                    Email =
-                        candidate.Email,
+                    CandidateName = candidate.FullName,
 
-                    Status =
-                        candidate.Status
+                    ReviewerId = reviewer.Id,
+
+                    ReviewerName = reviewer.FullName,
+
+                    AssignedDate = assignment.AssignedDate,
+
+                    Status = candidate.Status
                 });
         }
 
@@ -193,9 +194,20 @@ public class ReviewerService : IReviewerService
     }
 
     public async Task<CandidateWorkQueueDto?>
-GetCandidateAsync(
-    int candidateId)
+ GetCandidateAsync(
+     int candidateId,
+     string reviewerEmail)
     {
+        var assigned =
+            await IsAssignedReviewerAsync(
+                candidateId,
+                reviewerEmail);
+
+        if (!assigned)
+        {
+            throw new Exception("Access denied");
+        }
+
         var candidate =
             await _candidateRepository
                 .GetByIdAsync(candidateId);
@@ -216,48 +228,62 @@ GetCandidateAsync(
 
     public async Task<List<CandidateDocumentDto>>
 GetCandidateDocumentsAsync(
-    int candidateId)
+    int candidateId,
+    string reviewerEmail)
     {
+        var assigned =
+            await IsAssignedReviewerAsync(
+                candidateId,
+                reviewerEmail);
+
+        if (!assigned)
+        {
+            throw new Exception("Access denied");
+        }
+
         var documents =
             await _documentRepository
-                .GetByCandidateIdAsync(
-                    candidateId);
+                .GetByCandidateIdAsync(candidateId);
 
         return documents
-            .Select(x =>
-                new CandidateDocumentDto
-                {
-                    Id = x.Id,
-                    FileName =
-                        x.OriginalFileName,
-                    Status = x.Status,
-                    FileType = x.FileType
-                })
+            .Select(x => new CandidateDocumentDto
+            {
+                Id = x.Id,
+                FileName = x.OriginalFileName,
+                Status = x.Status,
+                FileType = x.FileType
+            })
             .ToList();
     }
 
     public async Task<List<VerificationResponseDto>>
-GetCandidateVerificationsAsync(
-    int candidateId)
+ GetCandidateVerificationsAsync(
+     int candidateId,
+     string reviewerEmail)
     {
+        var assigned =
+            await IsAssignedReviewerAsync(
+                candidateId,
+                reviewerEmail);
+
+        if (!assigned)
+        {
+            throw new Exception("Access denied");
+        }
+
         var items =
             await _verificationRepository
-                .GetByCandidateIdAsync(
-                    candidateId);
+                .GetByCandidateIdAsync(candidateId);
 
         return items
-            .Select(x =>
-                new VerificationResponseDto
-                {
-                    Id = x.Id,
-                    CandidateId =
-                        x.CandidateId,
-                    VerificationType =
-                        x.VerificationType,
-                    Status = x.Status,
-                    ReviewerRemarks =
-                        x.ReviewerRemarks
-                })
+            .Select(x => new VerificationResponseDto
+            {
+                Id = x.Id,
+                CandidateId = x.CandidateId,
+                VerificationType = x.VerificationType,
+                Status = x.Status,
+                ReviewerRemarks = x.ReviewerRemarks
+            })
             .ToList();
     }
     private async Task<bool>
@@ -447,5 +473,111 @@ DownloadDocumentAsync(
         await _verificationRepository.SaveChangesAsync();
 
         return "Document reviewed successfully.";
+    }
+
+    public async Task<List<ReviewerDocumentDto>>
+GetReviewerDocumentsAsync(
+    string reviewerEmail)
+    {
+        var reviewer =
+            await _userRepository
+                .GetByEmailAsync(
+                    reviewerEmail);
+
+        if (reviewer == null)
+        {
+            throw new Exception(
+                "Reviewer not found");
+        }
+
+        var assignments =
+            await _assignmentRepository
+                .GetByReviewerIdAsync(
+                    reviewer.Id);
+
+        var result =
+            new List<ReviewerDocumentDto>();
+
+        foreach (var assignment in assignments)
+        {
+            var candidate =
+                await _candidateRepository
+                    .GetByIdAsync(
+                        assignment.CandidateId);
+
+            if (candidate == null)
+                continue;
+
+            var documents =
+                await _documentRepository
+                    .GetByCandidateIdAsync(
+                        assignment.CandidateId);
+
+            result.AddRange(
+                documents.Select(d =>
+                    new ReviewerDocumentDto
+                    {
+                        Id = d.Id,
+
+                        FileName =
+                            d.OriginalFileName,
+
+                        OriginalFileName =
+                            d.OriginalFileName,
+
+                        FileType =
+                            d.FileType,
+
+                        Status =
+                            d.Status
+                    }));
+        }
+
+        return result;
+    }
+
+    public async Task<List<VerificationResponseDto>>
+GetReviewerVerificationsAsync(
+    string reviewerEmail)
+    {
+        var reviewer =
+            await _userRepository
+                .GetByEmailAsync(
+                    reviewerEmail);
+
+        if (reviewer == null)
+        {
+            throw new Exception(
+                "Reviewer not found");
+        }
+
+        var assignments =
+            await _assignmentRepository
+                .GetByReviewerIdAsync(
+                    reviewer.Id);
+
+        var candidateIds =
+            assignments
+                .Select(x => x.CandidateId)
+                .ToList();
+
+        var verifications =
+            await _verificationRepository
+                .GetByCandidateIdsAsync(
+                    candidateIds);
+
+        return verifications
+            .Select(x =>
+                new VerificationResponseDto
+                {
+                    Id = x.Id,
+                    CandidateId = x.CandidateId,
+                    VerificationType =
+                        x.VerificationType,
+                    Status = x.Status,
+                    ReviewerRemarks =
+                        x.ReviewerRemarks
+                })
+            .ToList();
     }
 }

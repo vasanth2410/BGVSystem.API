@@ -20,6 +20,10 @@ namespace BGVSystem.Application.Interfaces
 
         Task SaveChangesAsync();
 
-        
+        Task<bool> IsCandidateAssignedToReviewerAsync(
+    int candidateId,
+    int reviewerId);
+
+
     }
 }

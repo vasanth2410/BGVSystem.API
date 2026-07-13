@@ -2,6 +2,7 @@
 using BGVSystem.Application.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
 
 namespace BGVSystem.API.Controllers;
 
@@ -15,6 +16,15 @@ public class VerificationController : ControllerBase
         IVerificationService verificationService)
     {
         _verificationService = verificationService;
+    }
+
+    private int GetReviewerId()
+    {
+        return int.Parse(
+            User.FindFirstValue(
+                ClaimTypes.NameIdentifier
+            )!
+        );
     }
 
     [HttpPost]
@@ -88,12 +98,18 @@ public class VerificationController : ControllerBase
         return Ok(result);
     }
 
-    [HttpGet("candidate/{candidateId}")]
-    public async Task<IActionResult> GetByCandidate(int candidateId)
+    [Authorize(Roles = "Reviewer")]
+    [HttpGet("reviewer/candidate/{candidateId}")]
+    public async Task<IActionResult> GetReviewerCandidateVerifications(
+    int candidateId)
     {
+        var reviewerId = GetReviewerId();
+
         var result =
             await _verificationService
-                .GetByCandidateIdAsync(candidateId);
+                .GetReviewerCandidateVerificationsAsync(
+                    candidateId,
+                    reviewerId);
 
         return Ok(result);
     }

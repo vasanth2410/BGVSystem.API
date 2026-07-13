@@ -83,10 +83,15 @@ public class ReviewerController : ControllerBase
     public async Task<IActionResult>
 GetCandidate(int candidateId)
     {
+        var email =
+    User.FindFirstValue(
+        ClaimTypes.Email);
+
         var result =
             await _reviewerService
                 .GetCandidateAsync(
-                    candidateId);
+                    candidateId,
+                    email!);
 
         return Ok(result);
     }
@@ -95,22 +100,32 @@ GetCandidate(int candidateId)
     public async Task<IActionResult>
 GetDocuments(int candidateId)
     {
+        var email =
+            User.FindFirstValue(
+                ClaimTypes.Email);
+
         var result =
             await _reviewerService
                 .GetCandidateDocumentsAsync(
-                    candidateId);
+                    candidateId,
+                    email!);
 
         return Ok(result);
     }
 
     [HttpGet("candidate/{candidateId}/verifications")]
     public async Task<IActionResult>
-GetVerifications(int candidateId)
+ GetVerifications(int candidateId)
     {
+        var email =
+            User.FindFirstValue(
+                ClaimTypes.Email);
+
         var result =
             await _reviewerService
                 .GetCandidateVerificationsAsync(
-                    candidateId);
+                    candidateId,
+                    email!);
 
         return Ok(result);
     }
@@ -173,5 +188,34 @@ DownloadDocument(
         return Ok(result);
     }
 
-   
+    [HttpGet("documents")]
+    public async Task<IActionResult> GetDocuments()
+    {
+        var email =
+            User.FindFirstValue(
+                ClaimTypes.Email);
+
+        var result =
+            await _reviewerService
+                .GetReviewerDocumentsAsync(
+                    email!);
+
+        return Ok(result);
+    }
+
+    [HttpGet("verifications")]
+    public async Task<IActionResult>
+GetReviewerVerifications()
+    {
+        var email =
+            User.FindFirstValue(
+                ClaimTypes.Email);
+
+        var result =
+            await _reviewerService
+                .GetReviewerVerificationsAsync(
+                    email!);
+
+        return Ok(result);
+    }
 }

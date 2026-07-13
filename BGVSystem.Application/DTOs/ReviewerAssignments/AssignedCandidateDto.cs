@@ -1,19 +1,18 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿namespace BGVSystem.Application.DTOs.ReviewerAssignments;
 
-namespace BGVSystem.Application.DTOs.ReviewerAssignments
+public class AssignedCandidateDto
 {
-    public class AssignedCandidateDto
-    {
-        public int CandidateId { get; set; }
+    public int AssignmentId { get; set; }
 
-        public string FullName { get; set; } = string.Empty;
+    public int CandidateId { get; set; }
 
-        public string Email { get; set; } = string.Empty;
+    public string CandidateName { get; set; } = string.Empty;
 
-        public string Status { get; set; } = string.Empty;
-    }
+    public int ReviewerId { get; set; }
+
+    public string ReviewerName { get; set; } = string.Empty;
+
+    public DateTime AssignedDate { get; set; }
+
+    public string Status { get; set; } = string.Empty;
 }

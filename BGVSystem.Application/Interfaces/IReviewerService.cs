@@ -16,11 +16,20 @@ public interface IReviewerService
 
     Task<List<AssignedCandidateDto>>GetAssignedCandidatesAsync(string reviewerEmail);
 
-    Task<CandidateWorkQueueDto?>GetCandidateAsync(int candidateId);
+    Task<CandidateWorkQueueDto?>
+GetCandidateAsync(
+    int candidateId,
+    string reviewerEmail);
 
-    Task<List<CandidateDocumentDto>>GetCandidateDocumentsAsync(int candidateId);
+    Task<List<CandidateDocumentDto>>
+    GetCandidateDocumentsAsync(
+        int candidateId,
+        string reviewerEmail);
 
-    Task<List<VerificationResponseDto>>GetCandidateVerificationsAsync(int candidateId);
+    Task<List<VerificationResponseDto>>
+    GetCandidateVerificationsAsync(
+        int candidateId,
+        string reviewerEmail);
 
     Task<ReviewerDocumentDto?>
 GetDocumentAsync(
@@ -38,5 +47,13 @@ GetDocumentAsync(
     int documentId,
     string reviewerEmail,
     ReviewDocumentDto dto);
+
+    Task<List<ReviewerDocumentDto>>
+GetReviewerDocumentsAsync(
+    string reviewerEmail);
+
+    Task<List<VerificationResponseDto>>
+GetReviewerVerificationsAsync(
+    string reviewerEmail);
 
 }

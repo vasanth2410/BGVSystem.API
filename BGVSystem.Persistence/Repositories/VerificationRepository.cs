@@ -97,4 +97,15 @@ public class VerificationRepository : IVerificationRepository
                 x.CandidateId == candidateId &&
                 x.VerificationType == verificationType);
     }
+
+    public async Task<List<Verification>>
+GetByCandidateIdsAsync(
+    List<int> candidateIds)
+    {
+        return await _context.Verifications
+            .Where(x =>
+                candidateIds.Contains(
+                    x.CandidateId))
+            .ToListAsync();
+    }
 }

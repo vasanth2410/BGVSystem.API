@@ -10,17 +10,21 @@ public class VerificationService : IVerificationService
     private readonly IVerificationRepository _verificationRepository;
 
     private readonly ICandidateRepository _candidateRepository;
+    private readonly IAssignmentRepository _assignmentRepository;
     private readonly IAuditService _auditService;
     public VerificationService(
-    IVerificationRepository verificationRepository,
-    ICandidateRepository candidateRepository,
-    IAuditService auditService)
+     IVerificationRepository verificationRepository,
+     ICandidateRepository candidateRepository,
+     IAssignmentRepository assignmentRepository,
+     IAuditService auditService)
     {
         _verificationRepository = verificationRepository;
 
         _candidateRepository = candidateRepository;
 
         _auditService = auditService;
+
+        _assignmentRepository = assignmentRepository;
     }
 
     public async Task<string> CreateAsync(CreateVerificationDto dto)
@@ -292,6 +296,39 @@ public class VerificationService : IVerificationService
     public async Task<List<VerificationResponseDto>>
 GetByCandidateIdAsync(int candidateId)
     {
+        var verifications =
+            await _verificationRepository
+                .GetByCandidateIdAsync(candidateId);
+
+        return verifications
+            .Select(x => new VerificationResponseDto
+            {
+                Id = x.Id,
+                CandidateId = x.CandidateId,
+                VerificationType = x.VerificationType,
+                Status = x.Status,
+                ReviewerRemarks = x.ReviewerRemarks
+            })
+            .ToList();
+    }
+
+    public async Task<List<VerificationResponseDto>>
+GetReviewerCandidateVerificationsAsync(
+    int candidateId,
+    int reviewerId)
+    {
+        var isAssigned =
+            await _assignmentRepository
+                .IsCandidateAssignedToReviewerAsync(
+                    candidateId,
+                    reviewerId);
+
+        if (!isAssigned)
+        {
+            throw new UnauthorizedAccessException(
+                "This candidate is not assigned to you.");
+        }
+
         var verifications =
             await _verificationRepository
                 .GetByCandidateIdAsync(candidateId);

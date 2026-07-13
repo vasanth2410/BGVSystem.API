@@ -57,5 +57,16 @@ namespace BGVSystem.Persistence.Repositories
         {
             await _context.SaveChangesAsync();
         }
+
+        public async Task<bool> IsCandidateAssignedToReviewerAsync(
+    int candidateId,
+    int reviewerId)
+        {
+            return await _context
+                .CandidateAssignments
+                .AnyAsync(x =>
+                    x.CandidateId == candidateId &&
+                    x.ReviewerId == reviewerId);
+        }
     }
 }

@@ -38,5 +38,9 @@ namespace BGVSystem.Application.Interfaces
         Task<Verification?> GetByCandidateAndTypeAsync(
     int candidateId,
     string verificationType);
+
+        Task<List<Verification>>
+GetByCandidateIdsAsync(
+    List<int> candidateIds);
     }
 }
