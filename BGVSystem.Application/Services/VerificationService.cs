@@ -1,4 +1,4 @@
-﻿using BGVSystem.Application.DTOs.Verifications;
+using BGVSystem.Application.DTOs.Verifications;
 using BGVSystem.Application.Exceptions;
 using BGVSystem.Application.Interfaces;
 using BGVSystem.Domain.Entities;
@@ -35,6 +35,14 @@ public class VerificationService : IVerificationService
         if (candidate == null)
         {
             throw new Exception("Candidate not found");
+        }
+
+        var existing = await _verificationRepository
+            .GetByCandidateAndTypeAsync(dto.CandidateId, dto.VerificationType);
+
+        if (existing != null)
+        {
+            return "Verification already exists";
         }
 
         var verification = new Verification
