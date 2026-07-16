@@ -1,4 +1,4 @@
-﻿using BGVSystem.Application.DTOs.Reviewer;
+using BGVSystem.Application.DTOs.Reviewer;
 using BGVSystem.Application.DTOs.ReviewerAssignments;
 using BGVSystem.Application.DTOs.Verifications;
 
@@ -6,7 +6,7 @@ namespace BGVSystem.Application.Interfaces;
 
 public interface IReviewerService
 {
-    Task<ReviewerDashboardDto> GetDashboardAsync();
+    Task<ReviewerDashboardDto> GetDashboardAsync(string reviewerEmail);
 
     Task<List<VerificationResponseDto>>GetPendingVerificationsAsync();
 

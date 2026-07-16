@@ -1,4 +1,4 @@
-﻿using BGVSystem.Application.DTOs.Reviewer;
+using BGVSystem.Application.DTOs.Reviewer;
 using BGVSystem.Application.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -20,12 +20,15 @@ public class ReviewerController : ControllerBase
     }
 
     [HttpGet("dashboard")]
-    public async Task<IActionResult>
-        GetDashboard()
+    public async Task<IActionResult> GetDashboard()
     {
+        var email =
+            User.FindFirstValue(
+                ClaimTypes.Email);
+
         var result =
             await _reviewerService
-                .GetDashboardAsync();
+                .GetDashboardAsync(email!);
 
         return Ok(result);
     }

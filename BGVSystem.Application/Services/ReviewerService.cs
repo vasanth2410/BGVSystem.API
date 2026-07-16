@@ -1,4 +1,4 @@
-﻿using BGVSystem.Application.DTOs.Reviewer;
+using BGVSystem.Application.DTOs.Reviewer;
 using BGVSystem.Application.DTOs.ReviewerAssignments;
 using BGVSystem.Application.DTOs.Verifications;
 using BGVSystem.Application.Interfaces;
@@ -35,41 +35,44 @@ public class ReviewerService : IReviewerService
     }
 
     public async Task<ReviewerDashboardDto>
-        GetDashboardAsync()
+        GetDashboardAsync(string reviewerEmail)
     {
-        var candidates =
-            await _candidateRepository.GetAllAsync();
+        var reviewer = await _userRepository.GetByEmailAsync(reviewerEmail);
+        if (reviewer == null)
+        {
+            throw new Exception("Reviewer not found");
+        }
 
-        var pending =
-            await _verificationRepository
-                .GetByStatusAsync("Pending");
+        var assignments = await _assignmentRepository.GetByReviewerIdAsync(reviewer.Id);
+        var candidateIds = assignments.Select(x => x.CandidateId).ToList();
 
-        var approved =
-            await _verificationRepository
-                .GetByStatusAsync("Approved");
+        var verifications = await _verificationRepository.GetByCandidateIdsAsync(candidateIds);
 
-        var rejected =
-            await _verificationRepository
-                .GetByStatusAsync("Rejected");
+        // Group by CandidateId and VerificationType, selecting the non-pending status if available (e.g. if one duplicate is Approved/Rejected, it wins)
+        var uniqueVerifications = verifications
+            .GroupBy(x => new { x.CandidateId, x.VerificationType })
+            .Select(g => g.OrderBy(x => x.Status == "Pending" ? 1 : 0).First())
+            .ToList();
 
-        var totalDocuments =
-     await _documentRepository.GetCountAsync();
+        var pending = uniqueVerifications.Where(x => x.Status == "Pending").ToList();
+        var approved = uniqueVerifications.Where(x => x.Status == "Approved").ToList();
+        var rejected = uniqueVerifications.Where(x => x.Status == "Rejected").ToList();
 
         double completionPercentage = 0;
 
-        if (candidates.Count > 0)
+        if (uniqueVerifications.Count > 0)
         {
             completionPercentage =
                 Math.Round(
                     (double)approved.Count /
-                    candidates.Count * 100,
+                    uniqueVerifications.Count * 100,
                     2
                 );
         }
 
         return new ReviewerDashboardDto
         {
-            Assigned = candidates.Count,
+            Assigned = uniqueVerifications.Count,
 
             Pending = pending.Count,
 
