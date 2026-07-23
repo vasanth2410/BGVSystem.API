@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -9,8 +9,18 @@ namespace BGVSystem.Application.Interfaces
     public interface IEmailTemplateService
     {
         Task<string> GetWelcomeTemplateAsync(
-     string fullName,
-     string email,
-     string password);
+            string fullName,
+            string email,
+            string password);
+
+        Task<string> GetDocumentRequestTemplateAsync(
+            string fullName,
+            string documentType,
+            string remarks);
+
+        Task<string> GetStatusUpdateTemplateAsync(
+            string fullName,
+            string status,
+            string remarks);
     }
 }

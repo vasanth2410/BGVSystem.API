@@ -1,4 +1,4 @@
-﻿using BGVSystem.Application.Interfaces;
+using BGVSystem.Application.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using System;
@@ -66,23 +66,16 @@ namespace BGVSystem.Infrastructure.BackgroundServices
                     catch (Exception ex)
                     {
                         notification.RetryCount++;
+                        notification.LastAttemptAt = DateTime.UtcNow;
+                        notification.ErrorMessage = ex.Message;
 
-                        notification.LastAttemptAt =
-                            DateTime.UtcNow;
-
-                        notification.ErrorMessage =
-                            ex.Message;
-
-                        if (notification.RetryCount
-                            >= notification.MaxRetryCount)
+                        if (notification.RetryCount >= notification.MaxRetryCount)
                         {
-                            notification.Status =
-                                "DeadLetter";
+                            notification.Status = "DeadLetter";
                         }
                         else
                         {
-                            notification.Status =
-                                "Pending";
+                            notification.Status = "Pending";
                         }
 
                         await notificationRepository

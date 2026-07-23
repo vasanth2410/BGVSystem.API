@@ -10,21 +10,21 @@ namespace BGVSystem.Application.Services;
 public class ReviewerService : IReviewerService
 {
     private readonly ICandidateRepository _candidateRepository;
-
     private readonly IDocumentRepository _documentRepository;
-
     private readonly IVerificationRepository _verificationRepository;
-    private readonly IAssignmentRepository
-    _assignmentRepository;
+    private readonly IAssignmentRepository _assignmentRepository;
+    private readonly IUserRepository _userRepository;
+    private readonly IEmailTemplateService _emailTemplateService;
+    private readonly INotificationRepository _notificationRepository;
 
-    private readonly IUserRepository
-        _userRepository;
     public ReviewerService(
         ICandidateRepository candidateRepository,
         IDocumentRepository documentRepository,
         IVerificationRepository verificationRepository,
         IAssignmentRepository assignmentRepository,
-        IUserRepository userRepository
+        IUserRepository userRepository,
+        IEmailTemplateService emailTemplateService = null,
+        INotificationRepository notificationRepository = null
         )
     {
         _candidateRepository = candidateRepository;
@@ -32,6 +32,8 @@ public class ReviewerService : IReviewerService
         _verificationRepository = verificationRepository;
         _assignmentRepository = assignmentRepository;
         _userRepository = userRepository;
+        _emailTemplateService = emailTemplateService;
+        _notificationRepository = notificationRepository;
     }
 
     public async Task<ReviewerDashboardDto>
@@ -452,6 +454,7 @@ DownloadDocumentAsync(
 
         if (candidate != null)
         {
+            var oldStatus = candidate.Status;
             var documents =
                 await _documentRepository
                     .GetByCandidateIdAsync(candidate.Id);
@@ -471,6 +474,50 @@ DownloadDocumentAsync(
 
             await _candidateRepository.UpdateAsync(candidate);
             await _candidateRepository.SaveChangesAsync();
+
+            // 📧 Automatic Email Notifications for Document Request & Status Change
+            if (_emailTemplateService != null && _notificationRepository != null)
+            {
+                try
+                {
+                    if (dto.Status == "Rejected")
+                    {
+                        var docBody = await _emailTemplateService.GetDocumentRequestTemplateAsync(
+                            candidate.FullName,
+                            document.OriginalFileName,
+                            dto.ReviewerRemarks ?? "Resubmission requested by reviewer");
+
+                        await _notificationRepository.AddAsync(new Notification
+                        {
+                            ToEmail = candidate.Email,
+                            Subject = $"Action Required: Resubmit {document.OriginalFileName}",
+                            Body = docBody,
+                            Status = "Pending",
+                            CreatedAt = DateTime.UtcNow
+                        });
+                    }
+
+                    var statusBody = await _emailTemplateService.GetStatusUpdateTemplateAsync(
+                        candidate.FullName,
+                        candidate.Status,
+                        dto.ReviewerRemarks ?? $"Document {document.OriginalFileName} marked as {dto.Status}");
+
+                    await _notificationRepository.AddAsync(new Notification
+                    {
+                        ToEmail = candidate.Email,
+                        Subject = $"BGV Status Alert: {candidate.Status}",
+                        Body = statusBody,
+                        Status = "Pending",
+                        CreatedAt = DateTime.UtcNow
+                    });
+
+                    await _notificationRepository.SaveChangesAsync();
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"[EMAIL TRIGGER ERROR] {ex.Message}");
+                }
+            }
         }
 
         await _verificationRepository.SaveChangesAsync();

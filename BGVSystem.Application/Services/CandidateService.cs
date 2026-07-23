@@ -1,4 +1,4 @@
-﻿using BGVSystem.Application.DTOs;
+using BGVSystem.Application.DTOs;
 //using BGVSystem.Application.DTOs.Candidates;
 using BGVSystem.Application.Interfaces;
 using BGVSystem.Domain.Entities;
@@ -15,22 +15,21 @@ public class CandidateService : ICandidateService
     private readonly INotificationRepository _notificationRepository;
     private readonly IEmailTemplateService _emailTemplateService;
     private readonly IUserRepository _userRepository;
+
     public CandidateService(
-    ICandidateRepository candidateRepository,
-    IAuditService auditService,
-    INotificationRepository notificationRepository,
-    IEmailTemplateService emailTemplateService,
-    IUserRepository userRepository)
+        ICandidateRepository candidateRepository,
+        IAuditService auditService,
+        INotificationRepository notificationRepository,
+        IEmailTemplateService emailTemplateService,
+        IUserRepository userRepository,
+        IEmailService emailService = null)
     {
         _candidateRepository = candidateRepository;
-
         _auditService = auditService;
-
         _notificationRepository = notificationRepository;
-
         _emailTemplateService = emailTemplateService;
-
         _userRepository = userRepository;
+        _emailService = emailService;
     }
 
     private string GenerateTemporaryPassword()
@@ -80,6 +79,18 @@ public class CandidateService : ICandidateService
         var existingUser =
     await _userRepository
         .GetByEmailAsync(dto.Email);
+
+        if (existingUser != null)
+        {
+            var existingCandidate = await _candidateRepository.GetByEmailAsync(dto.Email);
+            if (existingCandidate == null)
+            {
+                // Auto-clean orphan user record left behind by past candidate deletion
+                await _userRepository.DeleteAsync(existingUser);
+                await _userRepository.SaveChangesAsync();
+                existingUser = null;
+            }
+        }
 
         if (existingUser != null)
         {
@@ -136,25 +147,38 @@ public class CandidateService : ICandidateService
              candidate.Email,
              temporaryPassword);
 
-        await _notificationRepository.AddAsync(
-            new Notification
+        if (_emailService != null)
+        {
+            try
             {
-                ToEmail = candidate.Email,
+                await _emailService.SendEmailAsync(new SendEmailDto
+                {
+                    To = candidate.Email,
+                    Subject = "Welcome to BGV System - Account Access Credentials",
+                    Body = body
+                });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[CANDIDATE WELCOME EMAIL ERROR] {ex.Message}");
+            }
+        }
+        else
+        {
+            await _notificationRepository.AddAsync(
+                new Notification
+                {
+                    ToEmail = candidate.Email,
+                    Subject = "Welcome to BGV System - Account Access Credentials",
+                    Body = body,
+                    Status = "Pending",
+                    RetryCount = 0,
+                    MaxRetryCount = 3,
+                    CreatedAt = DateTime.UtcNow
+                });
 
-                Subject = "Welcome to BGV System",
-
-                Body = body,
-
-                Status = "Pending",
-
-                RetryCount = 0,
-
-                MaxRetryCount = 3,
-
-                CreatedAt = DateTime.UtcNow
-            });
-
-        await _notificationRepository.SaveChangesAsync();
+            await _notificationRepository.SaveChangesAsync();
+        }
 
         return "Candidate created successfully";
     }
@@ -268,6 +292,17 @@ RestoreAsync(int id)
     public async Task<string>
 PermanentDeleteAsync(int id)
     {
+        var candidate = await _candidateRepository.GetByIdAsync(id);
+        if (candidate != null)
+        {
+            var user = await _userRepository.GetByEmailAsync(candidate.Email);
+            if (user != null)
+            {
+                await _userRepository.DeleteAsync(user);
+                await _userRepository.SaveChangesAsync();
+            }
+        }
+
         await _candidateRepository
             .PermanentDeleteAsync(id);
 

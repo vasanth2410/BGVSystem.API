@@ -1,4 +1,4 @@
-﻿using BGVSystem.Domain.Entities;
+using BGVSystem.Domain.Entities;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -16,5 +16,7 @@ namespace BGVSystem.Application.Interfaces
         Task<User?> GetByIdAsync(int id);
 
         Task<List<User>> GetReviewersAsync();
+
+        Task DeleteAsync(User user);
     }
 }

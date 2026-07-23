@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -8,7 +8,8 @@ namespace BGVSystem.Application.Interfaces
 {
     public interface IReportService
     {
-        Task<byte[]>
-        ExportCandidatesAsync();
+        Task<byte[]> ExportCandidatesAsync();
+
+        Task<byte[]> GenerateCandidatePdfReportAsync(int candidateId);
     }
 }

@@ -1,4 +1,4 @@
-﻿using BGVSystem.Application.Interfaces;
+using BGVSystem.Application.Interfaces;
 using BGVSystem.Domain.Entities;
 using BGVSystem.Persistence.Context;
 using Microsoft.EntityFrameworkCore;
@@ -45,4 +45,9 @@ public class UserRepository : IUserRepository
             .ToListAsync();
     }
 
+    public Task DeleteAsync(User user)
+    {
+        _context.Users.Remove(user);
+        return Task.CompletedTask;
+    }
 }
