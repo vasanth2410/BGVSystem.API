@@ -1,4 +1,4 @@
-﻿using BGVSystem.Application.DTOs.CandidatePortal;
+using BGVSystem.Application.DTOs.CandidatePortal;
 using BGVSystem.Application.Interfaces;
 using BGVSystem.Domain.Entities;
 using Microsoft.AspNetCore.Http;
@@ -13,21 +13,22 @@ public class CandidatePortalService
     private readonly ICandidateRepository
         _candidateRepository;
 
-    private readonly IDocumentRepository
-        _documentRepository;
-
-
+    private readonly IDocumentRepository _documentRepository;
+    private readonly IVerificationRepository _verificationRepository;
     private readonly IWebHostEnvironment _environment;
 
     public CandidatePortalService(
         ICandidateRepository candidateRepository,
         IDocumentRepository documentRepository,
+        IVerificationRepository verificationRepository,
         IWebHostEnvironment environment)
     {
         _candidateRepository = candidateRepository;
         _documentRepository = documentRepository;
+        _verificationRepository = verificationRepository;
         _environment = environment;
     }
+
 
     public async Task<CandidateProfileDto?>
         GetProfileAsync(string email)
@@ -186,10 +187,28 @@ public class CandidatePortalService
         };
 
         await _documentRepository.AddAsync(document);
-
         await _documentRepository.SaveChangesAsync();
 
+        var existingVerification = await _verificationRepository
+            .GetByCandidateAndTypeAsync(candidate.Id, file.FileName);
+
+        if (existingVerification == null)
+        {
+            var verification = new Verification
+            {
+                CandidateId = candidate.Id,
+                VerificationType = file.FileName,
+                Status = "Pending",
+                ReviewerRemarks = string.Empty,
+                CreatedDate = DateTime.UtcNow
+            };
+            await _verificationRepository.AddAsync(verification);
+            await _verificationRepository.SaveChangesAsync();
+        }
+
         return "Document uploaded successfully.";
+
+
     }
 
     public async Task<List<DocumentListDto>>

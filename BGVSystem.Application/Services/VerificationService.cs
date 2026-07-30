@@ -363,7 +363,12 @@ GetByCandidateIdAsync(int candidateId)
             await _verificationRepository
                 .GetByCandidateIdAsync(candidateId);
 
-        return verifications
+        var unique = verifications
+            .GroupBy(x => x.VerificationType)
+            .Select(g => g.OrderBy(x => x.Status == "Pending" ? 1 : 0).ThenByDescending(x => x.Id).First())
+            .ToList();
+
+        return unique
             .Select(x => new VerificationResponseDto
             {
                 Id = x.Id,
@@ -396,7 +401,12 @@ GetReviewerCandidateVerificationsAsync(
             await _verificationRepository
                 .GetByCandidateIdAsync(candidateId);
 
-        return verifications
+        var unique = verifications
+            .GroupBy(x => x.VerificationType)
+            .Select(g => g.OrderBy(x => x.Status == "Pending" ? 1 : 0).ThenByDescending(x => x.Id).First())
+            .ToList();
+
+        return unique
             .Select(x => new VerificationResponseDto
             {
                 Id = x.Id,
@@ -407,5 +417,6 @@ GetReviewerCandidateVerificationsAsync(
             })
             .ToList();
     }
+
 
 }

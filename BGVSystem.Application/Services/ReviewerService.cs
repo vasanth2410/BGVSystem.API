@@ -280,7 +280,12 @@ GetCandidateDocumentsAsync(
             await _verificationRepository
                 .GetByCandidateIdAsync(candidateId);
 
-        return items
+        var unique = items
+            .GroupBy(x => x.VerificationType)
+            .Select(g => g.OrderBy(x => x.Status == "Pending" ? 1 : 0).ThenByDescending(x => x.Id).First())
+            .ToList();
+
+        return unique
             .Select(x => new VerificationResponseDto
             {
                 Id = x.Id,
@@ -290,6 +295,7 @@ GetCandidateDocumentsAsync(
                 ReviewerRemarks = x.ReviewerRemarks
             })
             .ToList();
+
     }
     private async Task<bool>
 IsAssignedReviewerAsync(
@@ -616,7 +622,12 @@ GetReviewerVerificationsAsync(
                 .GetByCandidateIdsAsync(
                     candidateIds);
 
-        return verifications
+        var unique = verifications
+            .GroupBy(x => new { x.CandidateId, x.VerificationType })
+            .Select(g => g.OrderBy(x => x.Status == "Pending" ? 1 : 0).ThenByDescending(x => x.Id).First())
+            .ToList();
+
+        return unique
             .Select(x =>
                 new VerificationResponseDto
                 {
@@ -630,4 +641,5 @@ GetReviewerVerificationsAsync(
                 })
             .ToList();
     }
+
 }

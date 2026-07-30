@@ -66,6 +66,10 @@ builder.Services
     .AddScoped<IReviewerDocumentService,
                ReviewerDocumentService>();
 
+builder.Services.AddScoped<IOcrService, OcrService>();
+builder.Services.AddScoped<IThirdPartyVerificationService, ThirdPartyVerificationService>();
+
+
 builder.Services.AddScoped<IAdminService, AdminService>();
 builder.Services.AddScoped<
     IAdminDashboardService,
