@@ -140,36 +140,29 @@ public class CandidateService : ICandidateService
         await _userRepository
             .SaveChangesAsync();
 
-        var body =
-     await _emailTemplateService
-         .GetWelcomeTemplateAsync(
-             candidate.FullName,
-             candidate.Email,
-             temporaryPassword);
-
         if (_emailService != null)
         {
             try
             {
-                await _emailService.SendEmailAsync(new SendEmailDto
-                {
-                    To = candidate.Email,
-                    Subject = "Welcome to BGV System - Account Access Credentials",
-                    Body = body
-                });
+                await _emailService.SendWelcomeEmailAsync(candidate.Email, candidate.FullName, temporaryPassword);
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"[CANDIDATE WELCOME EMAIL ERROR] {ex.Message}");
             }
         }
-        else
+        else if (_emailTemplateService != null && _notificationRepository != null)
         {
+            var body = await _emailTemplateService.GetWelcomeTemplateAsync(
+                candidate.FullName,
+                candidate.Email,
+                temporaryPassword);
+
             await _notificationRepository.AddAsync(
                 new Notification
                 {
                     ToEmail = candidate.Email,
-                    Subject = "Welcome to BGV System - Account Access Credentials",
+                    Subject = "Welcome to BGV Portal",
                     Body = body,
                     Status = "Pending",
                     RetryCount = 0,

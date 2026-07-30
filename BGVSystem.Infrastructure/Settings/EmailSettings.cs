@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -8,16 +8,41 @@ namespace BGVSystem.Infrastructure.Settings
 {
     public class EmailSettings
     {
-        public string SmtpServer { get; set; } = string.Empty;
+        public string Host { get; set; } = string.Empty;
 
-        public int Port { get; set; }
+        public int Port { get; set; } = 587;
 
-        public string SenderEmail { get; set; } = string.Empty;
+        public string DisplayName { get; set; } = "BGV System";
 
-        public string SenderName { get; set; } = string.Empty;
-
-        public string Username { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
 
         public string Password { get; set; } = string.Empty;
+
+        public bool EnableSSL { get; set; } = true;
+
+        // Backwards-compatibility property aliases
+        public string SmtpServer
+        {
+            get => !string.IsNullOrEmpty(Host) ? Host : string.Empty;
+            set => Host = value;
+        }
+
+        public string SenderEmail
+        {
+            get => !string.IsNullOrEmpty(Email) ? Email : string.Empty;
+            set => Email = value;
+        }
+
+        public string SenderName
+        {
+            get => !string.IsNullOrEmpty(DisplayName) ? DisplayName : string.Empty;
+            set => DisplayName = value;
+        }
+
+        public string Username
+        {
+            get => !string.IsNullOrEmpty(Email) ? Email : string.Empty;
+            set => Email = value;
+        }
     }
 }

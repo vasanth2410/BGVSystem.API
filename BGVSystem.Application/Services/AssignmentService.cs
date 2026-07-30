@@ -1,4 +1,4 @@
-﻿using BGVSystem.Application.DTOs.Assignments;
+using BGVSystem.Application.DTOs.Assignments;
 using BGVSystem.Application.Interfaces;
 using BGVSystem.Domain.Entities;
 using System;
@@ -12,27 +12,21 @@ namespace BGVSystem.Application.Services
     public class AssignmentService
     : IAssignmentService
     {
-        private readonly IAssignmentRepository
-            _assignmentRepository;
-
-        private readonly ICandidateRepository
-    _candidateRepository;
-
-        private readonly IUserRepository
-            _userRepository;
+        private readonly IAssignmentRepository _assignmentRepository;
+        private readonly ICandidateRepository _candidateRepository;
+        private readonly IUserRepository _userRepository;
+        private readonly IEmailService _emailService;
 
         public AssignmentService(
-            IAssignmentRepository
-                assignmentRepository, ICandidateRepository
-    candidateRepository, IUserRepository
-            userRepository)
+            IAssignmentRepository assignmentRepository,
+            ICandidateRepository candidateRepository,
+            IUserRepository userRepository,
+            IEmailService emailService = null)
         {
-            _assignmentRepository =
-                assignmentRepository;
-
+            _assignmentRepository = assignmentRepository;
             _candidateRepository = candidateRepository;
-
             _userRepository = userRepository;
+            _emailService = emailService;
         }
 
         public async Task<string>
@@ -85,6 +79,22 @@ namespace BGVSystem.Application.Services
 
             await _assignmentRepository
                 .SaveChangesAsync();
+
+            if (_emailService != null && candidate != null)
+            {
+                try
+                {
+                    await _emailService.SendDocumentRequestEmailAsync(
+                        candidate.Email,
+                        candidate.FullName,
+                        "Identity, Education, and Previous Employment Documents",
+                        $"Assigned to Reviewer: {reviewer.FullName}. Please log in to your candidate portal and upload the required verification documents.");
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"[EMAIL NOTICE] SendDocumentRequestEmailAsync on assignment failed: {ex.Message}");
+                }
+            }
 
             return "Candidate assigned successfully";
         }

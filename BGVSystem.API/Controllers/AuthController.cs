@@ -1,4 +1,4 @@
-﻿using BGVSystem.Application.DTOs.Auth;
+using BGVSystem.Application.DTOs.Auth;
 using BGVSystem.Application.Interfaces;
 using BGVSystem.Persistence.Repositories;
 using Microsoft.AspNetCore.Mvc;
@@ -10,15 +10,17 @@ namespace BGVSystem.API.Controllers;
 public class AuthController : ControllerBase
 {
     private readonly IAuthService _authService;
-
     private readonly IUserRepository _userRepository;
+    private readonly IEmailService _emailService;
 
     public AuthController(
         IAuthService authService,
-        IUserRepository userRepository)
+        IUserRepository userRepository,
+        IEmailService emailService = null)
     {
         _authService = authService;
         _userRepository = userRepository;
+        _emailService = emailService;
     }
 
     [HttpPost("register")]
@@ -37,6 +39,30 @@ public class AuthController : ControllerBase
         return Ok(result);
     }
 
+    [HttpPost("forgot-password")]
+    public async Task<IActionResult> ForgotPassword(string email)
+    {
+        var user = await _userRepository.GetByEmailAsync(email);
+        if (user == null)
+            return NotFound("User not found");
+
+        var resetToken = $"RST-{Guid.NewGuid().ToString().Substring(0, 8).ToUpper()}";
+
+        if (_emailService != null)
+        {
+            try
+            {
+                await _emailService.SendPasswordResetEmailAsync(user.Email, user.FullName, resetToken);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[EMAIL NOTICE] SendPasswordResetEmailAsync failed: {ex.Message}");
+            }
+        }
+
+        return Ok(new { Message = "Password reset instructions have been sent to your email.", ResetToken = resetToken });
+    }
+
     [HttpPost("reset-password")]
     public async Task<IActionResult> ResetPassword(
     string email,
@@ -51,6 +77,18 @@ public class AuthController : ControllerBase
             BCrypt.Net.BCrypt.HashPassword(newPassword);
 
         await _userRepository.SaveChangesAsync();
+
+        if (_emailService != null)
+        {
+            try
+            {
+                await _emailService.SendPasswordResetEmailAsync(user.Email, user.FullName, "Password reset completed successfully");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[EMAIL NOTICE] SendPasswordResetEmailAsync failed: {ex.Message}");
+            }
+        }
 
         return Ok("Password reset successfully.");
     }

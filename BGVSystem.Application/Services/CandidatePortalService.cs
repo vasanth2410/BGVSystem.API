@@ -16,17 +16,20 @@ public class CandidatePortalService
     private readonly IDocumentRepository _documentRepository;
     private readonly IVerificationRepository _verificationRepository;
     private readonly IWebHostEnvironment _environment;
+    private readonly IEmailService _emailService;
 
     public CandidatePortalService(
         ICandidateRepository candidateRepository,
         IDocumentRepository documentRepository,
         IVerificationRepository verificationRepository,
-        IWebHostEnvironment environment)
+        IWebHostEnvironment environment,
+        IEmailService emailService = null)
     {
         _candidateRepository = candidateRepository;
         _documentRepository = documentRepository;
         _verificationRepository = verificationRepository;
         _environment = environment;
+        _emailService = emailService;
     }
 
 
@@ -204,6 +207,18 @@ public class CandidatePortalService
             };
             await _verificationRepository.AddAsync(verification);
             await _verificationRepository.SaveChangesAsync();
+        }
+
+        if (_emailService != null && candidate != null)
+        {
+            try
+            {
+                await _emailService.SendDocumentsUploadedEmailAsync(candidate.Email, candidate.FullName);
+            }
+            catch (Exception ex)
+            {
+                System.Console.WriteLine($"[EMAIL NOTICE] SendDocumentsUploadedEmailAsync failed: {ex.Message}");
+            }
         }
 
         return "Document uploaded successfully.";

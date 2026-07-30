@@ -13,6 +13,7 @@ public class VerificationService : IVerificationService
     private readonly IAuditService _auditService;
     private readonly IEmailTemplateService _emailTemplateService;
     private readonly INotificationRepository _notificationRepository;
+    private readonly IEmailService _emailService;
 
     public VerificationService(
         IVerificationRepository verificationRepository,
@@ -20,7 +21,8 @@ public class VerificationService : IVerificationService
         IAssignmentRepository assignmentRepository,
         IAuditService auditService,
         IEmailTemplateService emailTemplateService = null,
-        INotificationRepository notificationRepository = null)
+        INotificationRepository notificationRepository = null,
+        IEmailService emailService = null)
     {
         _verificationRepository = verificationRepository;
         _candidateRepository = candidateRepository;
@@ -28,6 +30,7 @@ public class VerificationService : IVerificationService
         _assignmentRepository = assignmentRepository;
         _emailTemplateService = emailTemplateService;
         _notificationRepository = notificationRepository;
+        _emailService = emailService;
     }
 
     public async Task<string> CreateAsync(CreateVerificationDto dto)
@@ -143,25 +146,15 @@ public class VerificationService : IVerificationService
             "reviewer@test.com",
             "Reviewer");
 
-        // 📧 Dispatch Status Email Notification
-        if (_emailTemplateService != null && _notificationRepository != null && candidate != null)
+        // 📧 Dispatch Enterprise Status Email Notification
+        if (_emailService != null && candidate != null)
         {
             try
             {
-                var body = await _emailTemplateService.GetStatusUpdateTemplateAsync(
+                await _emailService.SendVerificationApprovedEmailAsync(
+                    candidate.Email,
                     candidate.FullName,
-                    "Approved",
                     remarks ?? $"{verification.VerificationType} Check Approved");
-
-                await _notificationRepository.AddAsync(new Notification
-                {
-                    ToEmail = candidate.Email,
-                    Subject = $"BGV Status Alert: {verification.VerificationType} Approved",
-                    Body = body,
-                    Status = "Pending",
-                    CreatedAt = DateTime.UtcNow
-                });
-                await _notificationRepository.SaveChangesAsync();
             }
             catch (Exception ex)
             {
@@ -218,25 +211,15 @@ public class VerificationService : IVerificationService
             "reviewer@test.com",
             "Reviewer");
 
-        // 📧 Dispatch Status Email Notification
-        if (_emailTemplateService != null && _notificationRepository != null && candidate != null)
+        // 📧 Dispatch Enterprise Status Email Notification
+        if (_emailService != null && candidate != null)
         {
             try
             {
-                var body = await _emailTemplateService.GetStatusUpdateTemplateAsync(
+                await _emailService.SendVerificationRejectedEmailAsync(
+                    candidate.Email,
                     candidate.FullName,
-                    "Rejected",
                     remarks ?? $"{verification.VerificationType} Check Rejected");
-
-                await _notificationRepository.AddAsync(new Notification
-                {
-                    ToEmail = candidate.Email,
-                    Subject = $"BGV Status Alert: {verification.VerificationType} Rejected",
-                    Body = body,
-                    Status = "Pending",
-                    CreatedAt = DateTime.UtcNow
-                });
-                await _notificationRepository.SaveChangesAsync();
             }
             catch (Exception ex)
             {

@@ -16,15 +16,18 @@ namespace BGVSystem.Application.Services
         private readonly ICandidateRepository _candidateRepository;
         private readonly IVerificationRepository _verificationRepository;
         private readonly IDocumentRepository _documentRepository;
+        private readonly IEmailService _emailService;
 
         public ReportService(
             ICandidateRepository candidateRepository,
             IVerificationRepository verificationRepository = null,
-            IDocumentRepository documentRepository = null)
+            IDocumentRepository documentRepository = null,
+            IEmailService emailService = null)
         {
             _candidateRepository = candidateRepository;
             _verificationRepository = verificationRepository;
             _documentRepository = documentRepository;
+            _emailService = emailService;
         }
 
         public async Task<byte[]> ExportCandidatesAsync()
@@ -222,7 +225,24 @@ namespace BGVSystem.Application.Services
                 });
             });
 
-            return pdfDocument.GeneratePdf();
+            var pdfBytes = pdfDocument.GeneratePdf();
+
+            if (_emailService != null && candidate != null)
+            {
+                try
+                {
+                    await _emailService.SendPdfReportReadyEmailAsync(
+                        candidate.Email,
+                        candidate.FullName,
+                        $"BGV-{candidate.Id:D6}");
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"[EMAIL NOTICE] SendPdfReportReadyEmailAsync failed: {ex.Message}");
+                }
+            }
+
+            return pdfBytes;
         }
     }
 }

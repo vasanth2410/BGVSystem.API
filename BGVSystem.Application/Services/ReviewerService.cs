@@ -16,6 +16,7 @@ public class ReviewerService : IReviewerService
     private readonly IUserRepository _userRepository;
     private readonly IEmailTemplateService _emailTemplateService;
     private readonly INotificationRepository _notificationRepository;
+    private readonly IEmailService _emailService;
 
     public ReviewerService(
         ICandidateRepository candidateRepository,
@@ -24,7 +25,8 @@ public class ReviewerService : IReviewerService
         IAssignmentRepository assignmentRepository,
         IUserRepository userRepository,
         IEmailTemplateService emailTemplateService = null,
-        INotificationRepository notificationRepository = null
+        INotificationRepository notificationRepository = null,
+        IEmailService emailService = null
         )
     {
         _candidateRepository = candidateRepository;
@@ -34,6 +36,7 @@ public class ReviewerService : IReviewerService
         _userRepository = userRepository;
         _emailTemplateService = emailTemplateService;
         _notificationRepository = notificationRepository;
+        _emailService = emailService;
     }
 
     public async Task<ReviewerDashboardDto>
@@ -481,47 +484,37 @@ DownloadDocumentAsync(
             await _candidateRepository.UpdateAsync(candidate);
             await _candidateRepository.SaveChangesAsync();
 
-            // 📧 Automatic Email Notifications for Document Request & Status Change
-            if (_emailTemplateService != null && _notificationRepository != null)
+            // 📧 Automatic Enterprise Email Notifications
+            if (_emailService != null && candidate != null)
             {
                 try
                 {
                     if (dto.Status == "Rejected")
                     {
-                        var docBody = await _emailTemplateService.GetDocumentRequestTemplateAsync(
+                        await _emailService.SendAdditionalDocumentsRequiredEmailAsync(
+                            candidate.Email,
                             candidate.FullName,
                             document.OriginalFileName,
                             dto.ReviewerRemarks ?? "Resubmission requested by reviewer");
-
-                        await _notificationRepository.AddAsync(new Notification
-                        {
-                            ToEmail = candidate.Email,
-                            Subject = $"Action Required: Resubmit {document.OriginalFileName}",
-                            Body = docBody,
-                            Status = "Pending",
-                            CreatedAt = DateTime.UtcNow
-                        });
                     }
-
-                    var statusBody = await _emailTemplateService.GetStatusUpdateTemplateAsync(
-                        candidate.FullName,
-                        candidate.Status,
-                        dto.ReviewerRemarks ?? $"Document {document.OriginalFileName} marked as {dto.Status}");
-
-                    await _notificationRepository.AddAsync(new Notification
+                    else if (candidate.Status == "In Progress")
                     {
-                        ToEmail = candidate.Email,
-                        Subject = $"BGV Status Alert: {candidate.Status}",
-                        Body = statusBody,
-                        Status = "Pending",
-                        CreatedAt = DateTime.UtcNow
-                    });
-
-                    await _notificationRepository.SaveChangesAsync();
+                        await _emailService.SendVerificationStartedEmailAsync(
+                            candidate.Email,
+                            candidate.FullName,
+                            document.OriginalFileName);
+                    }
+                    else if (candidate.Status == "Completed")
+                    {
+                        await _emailService.SendVerificationCompletedEmailAsync(
+                            candidate.Email,
+                            candidate.FullName,
+                            "Completed");
+                    }
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"[EMAIL TRIGGER ERROR] {ex.Message}");
+                    System.Console.WriteLine($"[EMAIL NOTICE] ReviewerService email trigger failed: {ex.Message}");
                 }
             }
         }
