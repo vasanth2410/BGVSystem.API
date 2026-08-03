@@ -1,4 +1,4 @@
-﻿using BGVSystem.Domain.Entities;
+using BGVSystem.Domain.Entities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -21,9 +21,11 @@ namespace BGVSystem.Application.Interfaces
         Task SaveChangesAsync();
 
         Task<bool> IsCandidateAssignedToReviewerAsync(
-    int candidateId,
-    int reviewerId);
+            int candidateId,
+            int reviewerId);
 
+        Task DeleteAsync(int id);
 
+        Task<int> CleanupDuplicatesAsync();
     }
 }

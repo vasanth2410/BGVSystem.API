@@ -1,4 +1,4 @@
-﻿using BGVSystem.Application.DTOs.Assignments;
+using BGVSystem.Application.DTOs.Assignments;
 using BGVSystem.Application.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -55,6 +55,20 @@ namespace BGVSystem.API.Controllers
                     .GetByReviewerIdAsync(reviewerId);
 
             return Ok(result);
+        }
+
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> Delete(int id)
+        {
+            await _assignmentService.DeleteAsync(id);
+            return Ok(new { message = "Assignment deleted successfully" });
+        }
+
+        [HttpPost("cleanup-duplicates")]
+        public async Task<IActionResult> CleanupDuplicates()
+        {
+            var removedCount = await _assignmentService.CleanupDuplicatesAsync();
+            return Ok(new { message = $"Removed {removedCount} duplicate assignment(s)" });
         }
     }
 }

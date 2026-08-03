@@ -61,6 +61,12 @@ namespace BGVSystem.Application.Services
                     "Selected user is not a reviewer");
             }
 
+            var isAlreadyAssigned = await _assignmentRepository.IsCandidateAssignedToReviewerAsync(dto.CandidateId, dto.ReviewerId);
+            if (isAlreadyAssigned)
+            {
+                throw new Exception("Candidate is already assigned to this reviewer.");
+            }
+
             var assignment =
                 new CandidateAssignment
                 {
@@ -150,6 +156,16 @@ namespace BGVSystem.Application.Services
                     AssignedDate = x.AssignedDate
                 })
                 .ToList();
+        }
+
+        public async Task DeleteAsync(int id)
+        {
+            await _assignmentRepository.DeleteAsync(id);
+        }
+
+        public async Task<int> CleanupDuplicatesAsync()
+        {
+            return await _assignmentRepository.CleanupDuplicatesAsync();
         }
     }
 }

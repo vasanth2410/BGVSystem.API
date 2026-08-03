@@ -1,4 +1,4 @@
-﻿using BGVSystem.Application.DTOs.Assignments;
+using BGVSystem.Application.DTOs.Assignments;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -17,6 +17,10 @@ namespace BGVSystem.Application.Interfaces
             GetAllAsync();
 
         Task<List<AssignmentResponseDto>>
-    GetByReviewerIdAsync(int reviewerId);
+            GetByReviewerIdAsync(int reviewerId);
+
+        Task DeleteAsync(int id);
+
+        Task<int> CleanupDuplicatesAsync();
     }
 }
