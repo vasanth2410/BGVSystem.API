@@ -253,13 +253,33 @@ GetCandidateDocumentsAsync(
             await _documentRepository
                 .GetByCandidateIdAsync(candidateId);
 
+        var verifications =
+            await _verificationRepository
+                .GetByCandidateIdAsync(candidateId);
+
         return documents
-            .Select(x => new CandidateDocumentDto
+            .Select(x =>
             {
-                Id = x.Id,
-                FileName = x.OriginalFileName,
-                Status = x.Status,
-                FileType = x.FileType
+                var v = verifications.FirstOrDefault(ver =>
+                    !string.IsNullOrEmpty(ver.VerificationType) && (
+                        ver.VerificationType.Equals(x.OriginalFileName, StringComparison.OrdinalIgnoreCase) ||
+                        ver.VerificationType.Equals(x.FileName, StringComparison.OrdinalIgnoreCase)
+                    )
+                );
+
+                string effectiveStatus = (v != null && !string.IsNullOrEmpty(v.Status) &&
+                    (v.Status.Equals("Approved", StringComparison.OrdinalIgnoreCase) ||
+                     v.Status.Equals("Rejected", StringComparison.OrdinalIgnoreCase)))
+                    ? v.Status
+                    : x.Status;
+
+                return new CandidateDocumentDto
+                {
+                    Id = x.Id,
+                    FileName = x.OriginalFileName,
+                    Status = effectiveStatus,
+                    FileType = x.FileType
+                };
             })
             .ToList();
     }

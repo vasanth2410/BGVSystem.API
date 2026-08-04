@@ -104,6 +104,15 @@ namespace BGVSystem.Application.Services
                     // CONTENT
                     page.Content().PaddingVertical(15).Column(column =>
                     {
+                        bool allDocsApproved = documents.Any() && documents.All(d => 
+                            (d.Status ?? "").Equals("Approved", StringComparison.OrdinalIgnoreCase) || 
+                            verifications.Any(v => (v.Status ?? "").Equals("Approved", StringComparison.OrdinalIgnoreCase) && 
+                                !string.IsNullOrEmpty(v.VerificationType) && 
+                                (v.VerificationType.Equals(d.FileName, StringComparison.OrdinalIgnoreCase) || v.VerificationType.Equals(d.OriginalFileName, StringComparison.OrdinalIgnoreCase)))
+                        );
+
+                        bool isCandidateApproved = (candidate.Status ?? "").Equals("Approved", StringComparison.OrdinalIgnoreCase) || allDocsApproved || (verifications.Any() && verifications.All(v => (v.Status ?? "").Equals("Approved", StringComparison.OrdinalIgnoreCase)));
+
                         // Candidate Profile Box
                         column.Item().Background("#f8fafc").Border(1).BorderColor("#cbd5e1").Padding(12).Column(profileCol =>
                         {
@@ -123,7 +132,7 @@ namespace BGVSystem.Application.Services
                                     col.Item().Text(t => { t.Span("Applied Role: ").Bold(); t.Span(candidate.AppliedRole ?? "-"); });
                                     col.Item().Text(t => { t.Span("PAN Number: ").Bold(); t.Span(candidate.PANNumber ?? "-"); });
                                     col.Item().Text(t => { t.Span("Aadhaar Number: ").Bold(); t.Span(candidate.AadhaarNumber ?? "-"); });
-                                    col.Item().Text(t => { t.Span("Overall Status: ").Bold(); t.Span(candidate.Status ?? "Pending").FontColor(candidate.Status == "Approved" ? "#16a34a" : candidate.Status == "Rejected" ? "#dc2626" : "#d97706").Bold(); });
+                                    col.Item().Text(t => { t.Span("Overall Status: ").Bold(); t.Span(isCandidateApproved ? "Approved" : candidate.Status ?? "Pending").FontColor(isCandidateApproved ? "#16a34a" : candidate.Status == "Rejected" ? "#dc2626" : "#d97706").Bold(); });
                                 });
                             });
                         });
@@ -151,12 +160,12 @@ namespace BGVSystem.Application.Services
 
                             int idx = 1;
                             var defaultTypes = new[] { "Identity Verification", "Document Check", "Education Verification", "Employment Verification", "Criminal Record Check" };
-                            
+
                             foreach (var checkType in defaultTypes)
                             {
                                 var existing = verifications.FirstOrDefault(v => v.VerificationType != null && v.VerificationType.Equals(checkType, StringComparison.OrdinalIgnoreCase));
-                                string status = existing?.Status ?? "In Progress";
-                                string remarks = existing?.ReviewerRemarks ?? "Verification check initiated.";
+                                string status = isCandidateApproved ? "Approved" : (existing?.Status ?? "In Progress");
+                                string remarks = isCandidateApproved ? "Verified and cleared by BGV Specialist reviewer." : (existing?.ReviewerRemarks ?? "Verification check initiated.");
 
                                 string statusColor = status == "Approved" || status == "Cleared" ? "#16a34a" : status == "Rejected" ? "#dc2626" : "#d97706";
 
@@ -189,9 +198,17 @@ namespace BGVSystem.Application.Services
 
                                 foreach (var doc in documents)
                                 {
+                                    var vMatch = verifications.FirstOrDefault(v => 
+                                        !string.IsNullOrEmpty(v.VerificationType) && 
+                                        (v.VerificationType.Equals(doc.FileName, StringComparison.OrdinalIgnoreCase) || v.VerificationType.Equals(doc.OriginalFileName, StringComparison.OrdinalIgnoreCase))
+                                    );
+
+                                    string docEffStatus = (vMatch != null && vMatch.Status.Equals("Approved", StringComparison.OrdinalIgnoreCase)) || isCandidateApproved ? "Approved" : (doc.Status ?? "Uploaded");
+                                    string docStatusColor = docEffStatus.Equals("Approved", StringComparison.OrdinalIgnoreCase) ? "#16a34a" : "#d97706";
+
                                     table.Cell().BorderBottom(1).BorderColor("#e2e8f0").Padding(6).Text(doc.FileType ?? "Document").FontSize(9);
-                                    table.Cell().BorderBottom(1).BorderColor("#e2e8f0").Padding(6).Text(doc.FileName ?? "-").FontSize(9);
-                                    table.Cell().BorderBottom(1).BorderColor("#e2e8f0").Padding(6).Text(doc.Status ?? "Uploaded").FontSize(9);
+                                    table.Cell().BorderBottom(1).BorderColor("#e2e8f0").Padding(6).Text(doc.OriginalFileName ?? doc.FileName ?? "-").FontSize(9);
+                                    table.Cell().BorderBottom(1).BorderColor("#e2e8f0").Padding(6).Text(docEffStatus).Bold().FontColor(docStatusColor).FontSize(9);
                                 }
                             });
                         }
@@ -208,7 +225,7 @@ namespace BGVSystem.Application.Services
                             row.ConstantItem(120).AlignRight().Column(col =>
                             {
                                 col.Item().Text("STATUS").FontSize(8).Bold().FontColor("#64748b");
-                                col.Item().Text(candidate.Status == "Approved" ? "VERIFIED VALID" : candidate.Status == "Rejected" ? "VERIFICATION FAILED" : "PENDING AUDIT").FontSize(9).Bold().FontColor(candidate.Status == "Approved" ? "#16a34a" : "#dc2626");
+                                col.Item().Text(isCandidateApproved ? "VERIFIED VALID" : candidate.Status == "Rejected" ? "VERIFICATION FAILED" : "PENDING AUDIT").FontSize(9).Bold().FontColor(isCandidateApproved ? "#16a34a" : "#dc2626");
                             });
                         });
                     });

@@ -9,6 +9,7 @@ public class VerificationService : IVerificationService
 {
     private readonly IVerificationRepository _verificationRepository;
     private readonly ICandidateRepository _candidateRepository;
+    private readonly IDocumentRepository _documentRepository;
     private readonly IAssignmentRepository _assignmentRepository;
     private readonly IAuditService _auditService;
     private readonly IEmailTemplateService _emailTemplateService;
@@ -20,12 +21,14 @@ public class VerificationService : IVerificationService
         ICandidateRepository candidateRepository,
         IAssignmentRepository assignmentRepository,
         IAuditService auditService,
+        IDocumentRepository documentRepository = null,
         IEmailTemplateService emailTemplateService = null,
         INotificationRepository notificationRepository = null,
         IEmailService emailService = null)
     {
         _verificationRepository = verificationRepository;
         _candidateRepository = candidateRepository;
+        _documentRepository = documentRepository;
         _auditService = auditService;
         _assignmentRepository = assignmentRepository;
         _emailTemplateService = emailTemplateService;
@@ -115,9 +118,23 @@ public class VerificationService : IVerificationService
         }
 
         verification.Status = "Approved";
+        verification.ReviewerRemarks = remarks;
 
-        verification.ReviewerRemarks =
-            remarks;
+        if (_documentRepository != null)
+        {
+            var docs = await _documentRepository.GetByCandidateIdAsync(verification.CandidateId);
+            var matchingDoc = docs.FirstOrDefault(d =>
+                !string.IsNullOrEmpty(d.OriginalFileName) &&
+                (d.OriginalFileName.Equals(verification.VerificationType, StringComparison.OrdinalIgnoreCase) ||
+                 d.FileName.Equals(verification.VerificationType, StringComparison.OrdinalIgnoreCase))
+            );
+
+            if (matchingDoc != null)
+            {
+                matchingDoc.Status = "Approved";
+                await _documentRepository.SaveChangesAsync();
+            }
+        }
 
         var candidate =
             await _candidateRepository
@@ -180,9 +197,23 @@ public class VerificationService : IVerificationService
         }
 
         verification.Status = "Rejected";
+        verification.ReviewerRemarks = remarks;
 
-        verification.ReviewerRemarks =
-            remarks;
+        if (_documentRepository != null)
+        {
+            var docs = await _documentRepository.GetByCandidateIdAsync(verification.CandidateId);
+            var matchingDoc = docs.FirstOrDefault(d =>
+                !string.IsNullOrEmpty(d.OriginalFileName) &&
+                (d.OriginalFileName.Equals(verification.VerificationType, StringComparison.OrdinalIgnoreCase) ||
+                 d.FileName.Equals(verification.VerificationType, StringComparison.OrdinalIgnoreCase))
+            );
+
+            if (matchingDoc != null)
+            {
+                matchingDoc.Status = "Rejected";
+                await _documentRepository.SaveChangesAsync();
+            }
+        }
 
         var candidate =
             await _candidateRepository

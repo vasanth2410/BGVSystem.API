@@ -56,6 +56,34 @@ public class CandidatePortalService
         };
     }
 
+    private static string GetEffectiveStatus(Document doc, IEnumerable<Verification> verifications)
+    {
+        var match = verifications.FirstOrDefault(v =>
+            !string.IsNullOrEmpty(v.VerificationType) && (
+                v.VerificationType.Equals(doc.OriginalFileName, StringComparison.OrdinalIgnoreCase) ||
+                v.VerificationType.Equals(doc.FileName, StringComparison.OrdinalIgnoreCase)
+            )
+        );
+
+        if (match != null && !string.IsNullOrEmpty(match.Status))
+        {
+            if (match.Status.Equals("Approved", StringComparison.OrdinalIgnoreCase) ||
+                match.Status.Equals("Rejected", StringComparison.OrdinalIgnoreCase))
+            {
+                return match.Status;
+            }
+        }
+
+        if (!string.IsNullOrEmpty(doc.Status) && (
+            doc.Status.Equals("Approved", StringComparison.OrdinalIgnoreCase) ||
+            doc.Status.Equals("Rejected", StringComparison.OrdinalIgnoreCase)))
+        {
+            return doc.Status;
+        }
+
+        return match?.Status ?? doc.Status ?? "Uploaded";
+    }
+
     public async Task<CandidateDashboardDto?>
        GetDashboardAsync(string email)
     {
@@ -70,20 +98,34 @@ public class CandidatePortalService
 
         var documents =
             await _documentRepository
-                .GetByCandidateIdAsync(
-                    candidate.Id);
+                .GetByCandidateIdAsync(candidate.Id);
 
-        var approved =
-            documents.Count(x =>
-                x.Status == "Approved");
+        var verifications =
+            await _verificationRepository
+                .GetByCandidateIdAsync(candidate.Id);
 
-        var pending =
-            documents.Count(x =>
-                x.Status == "Pending");
+        int approved = 0;
+        int pending = 0;
+        int rejected = 0;
 
-        var rejected =
-            documents.Count(x =>
-                x.Status == "Rejected");
+        foreach (var doc in documents)
+        {
+            var effectiveStatus = GetEffectiveStatus(doc, verifications);
+
+            if (effectiveStatus.Equals("Approved", StringComparison.OrdinalIgnoreCase))
+            {
+                approved++;
+            }
+            else if (effectiveStatus.Equals("Rejected", StringComparison.OrdinalIgnoreCase) ||
+                     effectiveStatus.Equals("Needs Action", StringComparison.OrdinalIgnoreCase))
+            {
+                rejected++;
+            }
+            else
+            {
+                pending++;
+            }
+        }
 
         string overallStatus;
 
@@ -110,6 +152,7 @@ public class CandidatePortalService
             OverallStatus = overallStatus
         };
     }
+
     public async Task<List<CandidateVerificationDto>>
     GetVerificationStatusAsync(string email)
     {
@@ -119,14 +162,16 @@ public class CandidatePortalService
 
         if (candidate == null)
         {
-            throw new Exception(
-                "Candidate not found");
+            throw new Exception("Candidate not found");
         }
 
         var documents =
             await _documentRepository
-                .GetByCandidateIdAsync(
-                    candidate.Id);
+                .GetByCandidateIdAsync(candidate.Id);
+
+        var verifications =
+            await _verificationRepository
+                .GetByCandidateIdAsync(candidate.Id);
 
         return documents
             .Select(x =>
@@ -134,7 +179,7 @@ public class CandidatePortalService
                 {
                     DocumentId = x.Id,
                     FileName = x.OriginalFileName,
-                    Status = x.Status
+                    Status = GetEffectiveStatus(x, verifications)
                 })
             .ToList();
     }
@@ -242,13 +287,17 @@ GetDocumentsAsync(string email)
             await _documentRepository
                 .GetByCandidateIdAsync(candidate.Id);
 
+        var verifications =
+            await _verificationRepository
+                .GetByCandidateIdAsync(candidate.Id);
+
         return documents.Select(x =>
             new DocumentListDto
             {
                 Id = x.Id,
                 FileName = x.OriginalFileName,
                 FileType = x.FileType,
-                Status = x.Status,
+                Status = GetEffectiveStatus(x, verifications),
                 UploadedDate = x.UploadedDate
             }).ToList();
     }

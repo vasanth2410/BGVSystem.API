@@ -15,6 +15,8 @@ public class CandidateService : ICandidateService
     private readonly INotificationRepository _notificationRepository;
     private readonly IEmailTemplateService _emailTemplateService;
     private readonly IUserRepository _userRepository;
+    private readonly IVerificationRepository _verificationRepository;
+    private readonly IDocumentRepository _documentRepository;
 
     public CandidateService(
         ICandidateRepository candidateRepository,
@@ -22,6 +24,8 @@ public class CandidateService : ICandidateService
         INotificationRepository notificationRepository,
         IEmailTemplateService emailTemplateService,
         IUserRepository userRepository,
+        IVerificationRepository verificationRepository,
+        IDocumentRepository documentRepository,
         IEmailService emailService = null)
     {
         _candidateRepository = candidateRepository;
@@ -29,6 +33,8 @@ public class CandidateService : ICandidateService
         _notificationRepository = notificationRepository;
         _emailTemplateService = emailTemplateService;
         _userRepository = userRepository;
+        _verificationRepository = verificationRepository;
+        _documentRepository = documentRepository;
         _emailService = emailService;
     }
 
@@ -41,6 +47,11 @@ public class CandidateService : ICandidateService
     {
         var candidates = await _candidateRepository.GetAllAsync();
 
+        foreach (var candidate in candidates)
+        {
+            await SyncCandidateStatusAsync(candidate);
+        }
+
         return candidates.Select(x => new CandidateResponseDto
         {
             Id = x.Id,
@@ -49,6 +60,48 @@ public class CandidateService : ICandidateService
             PhoneNumber = x.PhoneNumber,
             Status = x.Status
         }).ToList();
+    }
+
+    private async Task SyncCandidateStatusAsync(Candidate candidate)
+    {
+        var verifications = _verificationRepository != null
+            ? await _verificationRepository.GetByCandidateIdAsync(candidate.Id)
+            : new List<Verification>();
+
+        var documents = _documentRepository != null
+            ? await _documentRepository.GetByCandidateIdAsync(candidate.Id)
+            : new List<Document>();
+
+        if (!verifications.Any() && !documents.Any()) return;
+
+        bool hasRejections = verifications.Any(v => (v.Status ?? "").Equals("Rejected", StringComparison.OrdinalIgnoreCase)) ||
+                             documents.Any(d => (d.Status ?? "").Equals("Rejected", StringComparison.OrdinalIgnoreCase));
+
+        bool allUploadedApproved = documents.Any() && documents.All(d =>
+            (d.Status ?? "").Equals("Approved", StringComparison.OrdinalIgnoreCase) ||
+            verifications.Any(v => (v.Status ?? "").Equals("Approved", StringComparison.OrdinalIgnoreCase) &&
+                !string.IsNullOrEmpty(v.VerificationType) &&
+                (v.VerificationType.Equals(d.FileName, StringComparison.OrdinalIgnoreCase) || v.VerificationType.Equals(d.OriginalFileName, StringComparison.OrdinalIgnoreCase)))
+        );
+
+        bool allVerifsApproved = verifications.Any() && verifications.All(v => (v.Status ?? "").Equals("Approved", StringComparison.OrdinalIgnoreCase));
+
+        if (hasRejections)
+        {
+            if (candidate.Status != "Rejected")
+            {
+                candidate.Status = "Rejected";
+                await _candidateRepository.SaveChangesAsync();
+            }
+        }
+        else if (allUploadedApproved || allVerifsApproved)
+        {
+            if (candidate.Status != "Approved")
+            {
+                candidate.Status = "Approved";
+                await _candidateRepository.SaveChangesAsync();
+            }
+        }
     }
 
     public async Task<CandidateResponseDto?> GetByIdAsync(int id)
