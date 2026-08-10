@@ -11,12 +11,14 @@ public class OcrService : IOcrService
 {
     private readonly string _tessDataPath;
     private readonly string _language;
+    private readonly IFileStorageService? _fileStorageService;
 
-    public OcrService(IConfiguration configuration)
+    public OcrService(IConfiguration configuration, IFileStorageService? fileStorageService = null)
     {
+        _fileStorageService = fileStorageService;
+
         var configuredPath = configuration["TesseractSettings:TessDataPath"] ?? "tessdata";
         
-        // Resolve tessdata path dynamically relative to BaseDirectory or CurrentDirectory
         if (!Path.IsPathRooted(configuredPath))
         {
             var baseDir = AppContext.BaseDirectory;
@@ -41,16 +43,48 @@ public class OcrService : IOcrService
 
     public async Task<OcrResultDto> ProcessDocumentOcrAsync(int documentId, string fileName, string filePath)
     {
-        return await Task.Run(() => PerformOcrProcessing(documentId, fileName, filePath));
+        string resolvedPath = ResolveFilePath(filePath);
+        string? tempFilePath = null;
+
+        // If physical file does not exist locally, download from Supabase Storage to a temp file for OCR processing
+        if (!File.Exists(resolvedPath) && _fileStorageService != null)
+        {
+            try
+            {
+                var ext = Path.GetExtension(fileName);
+                tempFilePath = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid()}{ext}");
+                
+                using (var supabaseStream = await _fileStorageService.DownloadAsync(filePath))
+                using (var tempFileStream = new FileStream(tempFilePath, FileMode.Create))
+                {
+                    await supabaseStream.CopyToAsync(tempFileStream);
+                }
+
+                resolvedPath = tempFilePath;
+            }
+            catch (Exception ex)
+            {
+                System.Console.WriteLine($"[OCR NOTICE] Supabase download for OCR failed: {ex.Message}");
+            }
+        }
+
+        try
+        {
+            return await Task.Run(() => PerformOcrProcessing(documentId, fileName, resolvedPath));
+        }
+        finally
+        {
+            if (!string.IsNullOrEmpty(tempFilePath) && File.Exists(tempFilePath))
+            {
+                try { File.Delete(tempFilePath); } catch { }
+            }
+        }
     }
 
-    private OcrResultDto PerformOcrProcessing(int documentId, string fileName, string filePath)
+    private OcrResultDto PerformOcrProcessing(int documentId, string fileName, string resolvedPath)
     {
-        string resolvedPath = ResolveFilePath(filePath);
-
         if (!File.Exists(resolvedPath))
         {
-            // Fallback for missing physical file: return graceful structured response
             return new OcrResultDto
             {
                 DocumentId = documentId,
@@ -59,7 +93,7 @@ public class OcrService : IOcrService
                 ExtractedName = string.Empty,
                 ExtractedDob = string.Empty,
                 ConfidenceScore = 0.0,
-                RawText = $"[Warning] Physical document file not found at path: {filePath}",
+                RawText = $"[Warning] Document file not found at path: {resolvedPath}",
                 Status = "File Not Found"
             };
         }
@@ -72,7 +106,6 @@ public class OcrService : IOcrService
         {
             if (ext == ".pdf")
             {
-                // PDF Text Extraction via PdfPig
                 using (var pdf = PdfDocument.Open(resolvedPath))
                 {
                     var pageTexts = new List<string>();
@@ -87,7 +120,7 @@ public class OcrService : IOcrService
                     if (pageTexts.Count > 0)
                     {
                         rawText = string.Join("\n", pageTexts);
-                        meanConfidence = 99.0; // High confidence for native text PDF
+                        meanConfidence = 99.0;
                     }
                 }
 
@@ -99,7 +132,6 @@ public class OcrService : IOcrService
             }
             else
             {
-                // Image OCR via Tesseract Engine
                 if (Directory.Exists(_tessDataPath) && File.Exists(Path.Combine(_tessDataPath, $"{_language}.traineddata")))
                 {
                     using var engine = new TesseractEngine(_tessDataPath, _language, EngineMode.Default);
@@ -122,17 +154,13 @@ public class OcrService : IOcrService
             meanConfidence = 0.0;
         }
 
-        // Clean & Normalize Text
         rawText = rawText?.Trim() ?? string.Empty;
 
-        // Extract Document Classification & Identity Numbers using Regex
         string documentType = IdentifyDocumentType(fileName, rawText);
         string documentNumber = ExtractDocumentNumber(documentType, rawText);
         string extractedName = ExtractCandidateName(rawText);
         string extractedDob = ExtractDateOfBirth(rawText);
 
-        // Confidence Thresholding Strategy:
-        // Below 60%: Return extracted data with warning status "Low Confidence - Review Required" (HTTP 200 OK)
         string status = meanConfidence < 60.0 
             ? "Low Confidence - Review Required" 
             : "Extracted";
@@ -155,11 +183,9 @@ public class OcrService : IOcrService
         if (string.IsNullOrWhiteSpace(filePath)) return string.Empty;
         if (Path.IsPathRooted(filePath) && File.Exists(filePath)) return filePath;
 
-        // Try relative to AppContext.BaseDirectory
         string combinedBase = Path.Combine(AppContext.BaseDirectory, filePath);
         if (File.Exists(combinedBase)) return combinedBase;
 
-        // Try relative to Current Directory
         string combinedCurrent = Path.Combine(Directory.GetCurrentDirectory(), filePath);
         if (File.Exists(combinedCurrent)) return combinedCurrent;
 

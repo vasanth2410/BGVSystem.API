@@ -11,10 +11,14 @@ namespace BGVSystem.API.Controllers;
 public class DocumentsController : ControllerBase
 {
     private readonly IDocumentService _documentService;
+    private readonly IFileStorageService _fileStorageService;
 
-    public DocumentsController(IDocumentService documentService)
+    public DocumentsController(
+        IDocumentService documentService,
+        IFileStorageService fileStorageService)
     {
         _documentService = documentService;
+        _fileStorageService = fileStorageService;
     }
 
     //[Authorize(Roles = "Candidate")]
@@ -57,44 +61,31 @@ public class DocumentsController : ControllerBase
 
         var filePath = document.FilePath;
         
-        if (!System.IO.File.Exists(filePath))
+        // 1. Try local disk fallback first for backward compatibility
+        if (System.IO.File.Exists(filePath))
         {
-            var fileName = Path.GetFileName(filePath);
-            
-            // Try relative fallbacks
-            var fallbackPath1 = Path.Combine(Directory.GetCurrentDirectory(), "Uploads", fileName);
-            var fallbackPath2 = Path.Combine(Directory.GetCurrentDirectory(), "api", "Uploads", fileName);
-            var fallbackPath3 = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Uploads", fileName);
-            var fallbackPath4 = Path.Combine(Directory.GetCurrentDirectory(), "..", "BGVSystem.API", "Uploads", fileName);
-
-            if (System.IO.File.Exists(fallbackPath1))
-            {
-                filePath = fallbackPath1;
-            }
-            else if (System.IO.File.Exists(fallbackPath2))
-            {
-                filePath = fallbackPath2;
-            }
-            else if (System.IO.File.Exists(fallbackPath3))
-            {
-                filePath = fallbackPath3;
-            }
-            else if (System.IO.File.Exists(fallbackPath4))
-            {
-                filePath = fallbackPath4;
-            }
-            else
-            {
-                return NotFound($"File not found. Checked DB path: {document.FilePath}");
-            }
+            var fileBytes = await System.IO.File.ReadAllBytesAsync(filePath);
+            return File(fileBytes, "application/octet-stream", document.OriginalFileName);
         }
 
-        var fileBytes = await System.IO.File.ReadAllBytesAsync(filePath);
+        var fileName = Path.GetFileName(filePath);
+        var fallbackPath1 = Path.Combine(Directory.GetCurrentDirectory(), "Uploads", fileName);
+        if (System.IO.File.Exists(fallbackPath1))
+        {
+            var fileBytes = await System.IO.File.ReadAllBytesAsync(fallbackPath1);
+            return File(fileBytes, "application/octet-stream", document.OriginalFileName);
+        }
 
-        return File(
-            fileBytes,
-            "application/octet-stream",
-            document.OriginalFileName);
+        // 2. Stream from Supabase Storage using ObjectPath
+        try
+        {
+            var stream = await _fileStorageService.DownloadAsync(document.FilePath);
+            return File(stream, "application/octet-stream", document.OriginalFileName);
+        }
+        catch (Exception ex)
+        {
+            return NotFound($"File not found in local disk or Supabase Storage. Error: {ex.Message}");
+        }
     }
 
     [HttpGet]

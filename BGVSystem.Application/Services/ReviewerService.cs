@@ -17,6 +17,7 @@ public class ReviewerService : IReviewerService
     private readonly IEmailTemplateService _emailTemplateService;
     private readonly INotificationRepository _notificationRepository;
     private readonly IEmailService _emailService;
+    private readonly IFileStorageService _fileStorageService;
 
     public ReviewerService(
         ICandidateRepository candidateRepository,
@@ -26,7 +27,8 @@ public class ReviewerService : IReviewerService
         IUserRepository userRepository,
         IEmailTemplateService emailTemplateService = null,
         INotificationRepository notificationRepository = null,
-        IEmailService emailService = null
+        IEmailService emailService = null,
+        IFileStorageService fileStorageService = null
         )
     {
         _candidateRepository = candidateRepository;
@@ -37,6 +39,7 @@ public class ReviewerService : IReviewerService
         _emailTemplateService = emailTemplateService;
         _notificationRepository = notificationRepository;
         _emailService = emailService;
+        _fileStorageService = fileStorageService;
     }
 
     public async Task<ReviewerDashboardDto>
@@ -419,9 +422,22 @@ DownloadDocumentAsync(
                 "Access denied");
         }
 
-        var bytes =
-            await File.ReadAllBytesAsync(
-                document.FilePath);
+        byte[] bytes;
+        if (File.Exists(document.FilePath))
+        {
+            bytes = await File.ReadAllBytesAsync(document.FilePath);
+        }
+        else if (_fileStorageService != null)
+        {
+            using var stream = await _fileStorageService.DownloadAsync(document.FilePath);
+            using var ms = new MemoryStream();
+            await stream.CopyToAsync(ms);
+            bytes = ms.ToArray();
+        }
+        else
+        {
+            throw new FileNotFoundException($"Document file not found at path '{document.FilePath}'");
+        }
 
         return (
             bytes,

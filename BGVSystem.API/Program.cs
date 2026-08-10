@@ -23,6 +23,12 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 builder.Services.Configure<EmailSettings>(
     builder.Configuration.GetSection(
         "EmailSettings"));
+builder.Services.Configure<SupabaseSettings>(
+    builder.Configuration.GetSection(
+        "SupabaseSettings"));
+
+builder.Services.AddHttpClient<IFileStorageService, SupabaseStorageService>();
+
 builder.Services
     .AddHostedService<
         NotificationWorker>();
