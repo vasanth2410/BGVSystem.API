@@ -1,4 +1,4 @@
-﻿using BGVSystem.Application.Interfaces;
+using BGVSystem.Application.Interfaces;
 using BGVSystem.Domain.Entities;
 using BGVSystem.Persistence.Context;
 using Microsoft.EntityFrameworkCore;
@@ -58,12 +58,12 @@ public class CandidateRepository : ICandidateRepository
         await _context.SaveChangesAsync();
     }
 
-    public async Task<Candidate?> GetByEmailAsync(
-    string email)
+    public async Task<Candidate?> GetByEmailAsync(string email)
     {
+        if (string.IsNullOrWhiteSpace(email)) return null;
+        var cleanEmail = email.Trim().ToLower();
         return await _context.Candidates
-    .FirstOrDefaultAsync(x =>
-        x.Email == email);
+            .FirstOrDefaultAsync(x => x.Email.ToLower() == cleanEmail);
     }
 
     public async Task<int> GetTotalCountAsync()

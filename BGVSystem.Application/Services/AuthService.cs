@@ -8,27 +8,28 @@ namespace BGVSystem.Application.Services;
 public class AuthService : IAuthService
 {
     private readonly IUserRepository _userRepository;
-
+    private readonly ICandidateRepository _candidateRepository;
     private readonly IJwtService _jwtService;
-
     private readonly IAuditService _auditService;
 
     public AuthService(
-    IUserRepository userRepository,
-    IJwtService jwtService,
-    IAuditService auditService)
+        IUserRepository userRepository,
+        ICandidateRepository candidateRepository,
+        IJwtService jwtService,
+        IAuditService auditService)
     {
         _userRepository = userRepository;
-
+        _candidateRepository = candidateRepository;
         _jwtService = jwtService;
-
         _auditService = auditService;
     }
 
     public async Task<string> RegisterAsync(RegisterRequestDto dto)
     {
+        var cleanEmail = dto.Email.Trim().ToLower();
+
         var existingUser = await _userRepository
-            .GetByEmailAsync(dto.Email);
+            .GetByEmailAsync(cleanEmail);
 
         if (existingUser != null)
         {
@@ -38,15 +39,34 @@ public class AuthService : IAuthService
         var hashedPassword =
             BCrypt.Net.BCrypt.HashPassword(dto.Password);
 
+        int targetRoleId = dto.RoleId <= 0 ? 3 : dto.RoleId;
+
         var user = new User
         {
-            FullName = dto.FullName,
-            Email = dto.Email,
+            FullName = dto.FullName.Trim(),
+            Email = cleanEmail,
             PasswordHash = hashedPassword,
-            RoleId = dto.RoleId
+            RoleId = targetRoleId
         };
 
         await _userRepository.AddAsync(user);
+
+        // If user is a Candidate (RoleId == 3), also create a matching Candidate record in Candidates table
+        if (targetRoleId == 3)
+        {
+            var existingCandidate = await _candidateRepository.GetByEmailAsync(cleanEmail);
+            if (existingCandidate == null)
+            {
+                var candidate = new Candidate
+                {
+                    FullName = dto.FullName.Trim(),
+                    Email = cleanEmail,
+                    Status = "Pending",
+                    CreatedDate = DateTime.UtcNow
+                };
+                await _candidateRepository.AddAsync(candidate);
+            }
+        }
 
         await _userRepository.SaveChangesAsync();
 
@@ -56,8 +76,10 @@ public class AuthService : IAuthService
     public async Task<AuthResponseDto> LoginAsync(
      LoginRequestDto dto)
     {
+        var cleanEmail = dto.Email.Trim().ToLower();
+
         var user = await _userRepository
-            .GetByEmailAsync(dto.Email);
+            .GetByEmailAsync(cleanEmail);
 
         if (user == null)
         {

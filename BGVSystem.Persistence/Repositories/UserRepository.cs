@@ -16,9 +16,11 @@ public class UserRepository : IUserRepository
 
     public async Task<User?> GetByEmailAsync(string email)
     {
+        if (string.IsNullOrWhiteSpace(email)) return null;
+        var cleanEmail = email.Trim().ToLower();
         return await _context.Users
             .Include(x => x.Role)
-            .FirstOrDefaultAsync(x => x.Email == email);
+            .FirstOrDefaultAsync(x => x.Email.ToLower() == cleanEmail);
     }
 
     public async Task AddAsync(User user)
