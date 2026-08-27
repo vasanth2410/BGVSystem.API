@@ -1,4 +1,4 @@
-﻿using System.Text.Json;
+using System.Text.Json;
 using BGVSystem.API.Models;
 using BGVSystem.Application.Exceptions;
 
@@ -58,12 +58,16 @@ public class ExceptionMiddleware
         context.Response.StatusCode =
             statusCode;
 
+        var errorMessage = exception.InnerException != null
+            ? $"{exception.Message} ({exception.InnerException.Message})"
+            : exception.Message;
+
         var response =
             new ErrorResponse
             {
                 Success = false,
                 StatusCode = statusCode,
-                Message = exception.Message,
+                Message = errorMessage,
                 Timestamp = DateTime.UtcNow
             };
 

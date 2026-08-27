@@ -187,20 +187,21 @@ using (var scope = app.Services.CreateScope())
         var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
         dbContext.Database.Migrate();
 
-        if (!dbContext.Roles.Any())
-        {
-            dbContext.Roles.AddRange(
-                new BGVSystem.Domain.Entities.Role { Id = 1, Name = "Admin" },
-                new BGVSystem.Domain.Entities.Role { Id = 2, Name = "Reviewer" },
-                new BGVSystem.Domain.Entities.Role { Id = 3, Name = "Candidate" }
-            );
-            dbContext.SaveChanges();
-        }
+        dbContext.Database.ExecuteSqlRaw(@"
+            IF NOT EXISTS (SELECT 1 FROM Roles WHERE Id = 1)
+            BEGIN
+                SET IDENTITY_INSERT Roles ON;
+                INSERT INTO Roles (Id, Name) VALUES (1, 'Admin');
+                INSERT INTO Roles (Id, Name) VALUES (2, 'Reviewer');
+                INSERT INTO Roles (Id, Name) VALUES (3, 'Candidate');
+                SET IDENTITY_INSERT Roles OFF;
+            END
+        ");
     }
     catch (Exception ex)
     {
         var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
-        logger.LogError(ex, "An error occurred while applying database migrations on startup.");
+        logger.LogError(ex, "An error occurred while applying database migrations or seeding roles on startup.");
     }
 }
 
