@@ -186,6 +186,16 @@ using (var scope = app.Services.CreateScope())
     {
         var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
         dbContext.Database.Migrate();
+
+        if (!dbContext.Roles.Any())
+        {
+            dbContext.Roles.AddRange(
+                new BGVSystem.Domain.Entities.Role { Id = 1, Name = "Admin" },
+                new BGVSystem.Domain.Entities.Role { Id = 2, Name = "Reviewer" },
+                new BGVSystem.Domain.Entities.Role { Id = 3, Name = "Candidate" }
+            );
+            dbContext.SaveChanges();
+        }
     }
     catch (Exception ex)
     {
