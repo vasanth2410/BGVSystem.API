@@ -1,4 +1,4 @@
-﻿using BGVSystem.Application.DTOs.Auth;
+using BGVSystem.Application.DTOs.Auth;
 using BGVSystem.Application.Interfaces;
 using BGVSystem.Domain.Entities;
 using BGVSystem.Application.Exceptions;
@@ -89,7 +89,8 @@ public class AuthService : IAuthService
         {
             Token = token,
             Email = user.Email,
-            Role = user.Role.Name
+            Role = user.Role.Name,
+            FullName = user.FullName
         };
     }
 }
