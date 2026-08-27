@@ -14,6 +14,15 @@ using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Disable file watchers on Linux containers to avoid inotify handle limits
+builder.Host.ConfigureAppConfiguration((hostingContext, config) =>
+{
+    foreach (var source in config.Sources.OfType<Microsoft.Extensions.Configuration.FileConfigurationSource>())
+    {
+        source.ReloadOnChange = false;
+    }
+});
+
 // Database Configuration
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
