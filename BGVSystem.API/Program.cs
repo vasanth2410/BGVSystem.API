@@ -168,6 +168,21 @@ builder.Services.AddSwaggerGen(c =>
 
 var app = builder.Build();
 
+// Automatically apply EF Core database migrations on startup
+using (var scope = app.Services.CreateScope())
+{
+    try
+    {
+        var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        dbContext.Database.Migrate();
+    }
+    catch (Exception ex)
+    {
+        var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+        logger.LogError(ex, "An error occurred while applying database migrations on startup.");
+    }
+}
+
 // Swagger Middleware
 
 if (app.Environment.IsDevelopment())

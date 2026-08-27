@@ -1,6 +1,7 @@
 using BGVSystem.Application.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -27,64 +28,74 @@ namespace BGVSystem.Infrastructure.BackgroundServices
         {
             while (!stoppingToken.IsCancellationRequested)
             {
-                using var scope =
-                    _serviceScopeFactory
-                        .CreateScope();
-
-                var notificationRepository =
-                    scope.ServiceProvider
-                        .GetRequiredService<
-                            INotificationRepository>();
-
-                var emailService =
-                    scope.ServiceProvider
-                        .GetRequiredService<
-                            IEmailService>();
-
-                var pendingNotifications =
-                    await notificationRepository
-                        .GetPendingAsync();
-
-                foreach (var notification
-                    in pendingNotifications)
+                try
                 {
-                    try
-                    {
-                        await emailService
-                            .SendEmailDirectAsync(
-                                notification);
+                    using var scope =
+                        _serviceScopeFactory
+                            .CreateScope();
 
-                        notification.Status =
-                            "Sent";
+                    var notificationRepository =
+                        scope.ServiceProvider
+                            .GetRequiredService<
+                                INotificationRepository>();
 
-                        notification.SentAt =
-                            DateTime.UtcNow;
+                    var emailService =
+                        scope.ServiceProvider
+                            .GetRequiredService<
+                                IEmailService>();
 
+                    var pendingNotifications =
                         await notificationRepository
-                            .UpdateAsync(notification);
-                    }
-                    catch (Exception ex)
+                            .GetPendingAsync();
+
+                    foreach (var notification
+                        in pendingNotifications)
                     {
-                        notification.RetryCount++;
-                        notification.LastAttemptAt = DateTime.UtcNow;
-                        notification.ErrorMessage = ex.Message;
-
-                        if (notification.RetryCount >= notification.MaxRetryCount)
+                        try
                         {
-                            notification.Status = "DeadLetter";
-                        }
-                        else
-                        {
-                            notification.Status = "Pending";
-                        }
+                            await emailService
+                                .SendEmailDirectAsync(
+                                    notification);
 
-                        await notificationRepository
-                            .UpdateAsync(notification);
+                            notification.Status =
+                                "Sent";
+
+                            notification.SentAt =
+                                DateTime.UtcNow;
+
+                            await notificationRepository
+                                .UpdateAsync(notification);
+                        }
+                        catch (Exception ex)
+                        {
+                            notification.RetryCount++;
+                            notification.LastAttemptAt = DateTime.UtcNow;
+                            notification.ErrorMessage = ex.Message;
+
+                            if (notification.RetryCount >= notification.MaxRetryCount)
+                            {
+                                notification.Status = "DeadLetter";
+                            }
+                            else
+                            {
+                                notification.Status = "Pending";
+                            }
+
+                            await notificationRepository
+                                .UpdateAsync(notification);
+                        }
                     }
+
+                    await notificationRepository
+                        .SaveChangesAsync();
                 }
-
-                await notificationRepository
-                    .SaveChangesAsync();
+                catch (Exception ex)
+                {
+                    // Suppress worker execution errors to prevent host crash
+                    using var errScope = _serviceScopeFactory.CreateScope();
+                    var logger = errScope.ServiceProvider.GetService<ILogger<NotificationWorker>>();
+                    logger?.LogError(ex, "Error occurred in NotificationWorker background loop.");
+                }
 
                 await Task.Delay(
                     TimeSpan.FromSeconds(10),
