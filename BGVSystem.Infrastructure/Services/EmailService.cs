@@ -83,35 +83,65 @@ public class EmailService : IEmailService
 
     public async Task SendEmailDirectAsync(Notification notification)
     {
+        var smtpHost = !string.IsNullOrWhiteSpace(_settings.Host) ? _settings.Host : _settings.SmtpServer;
+        if (string.IsNullOrWhiteSpace(smtpHost))
+        {
+            smtpHost = "smtp.gmail.com";
+        }
+
+        var senderEmail = !string.IsNullOrWhiteSpace(_settings.Email) ? _settings.Email : _settings.SenderEmail;
+        var displayName = !string.IsNullOrWhiteSpace(_settings.DisplayName) ? _settings.DisplayName : _settings.SenderName;
+
+        var mimeMessage = new MimeMessage();
+        mimeMessage.From.Add(new MailboxAddress(displayName, senderEmail));
+        mimeMessage.To.Add(MailboxAddress.Parse(notification.ToEmail));
+        mimeMessage.Subject = notification.Subject;
+        mimeMessage.Body = new TextPart(TextFormat.Html) { Text = notification.Body };
+
+        var configuredPort = _settings.Port > 0 ? _settings.Port : 587;
+        var cleanPassword = (_settings.Password ?? "").Replace(" ", "");
+
+        using var client = new SmtpClient();
+        client.Timeout = 12000; // 12 seconds timeout per attempt
+
+        bool connected = false;
+
+        // Try primary configured port
         try
         {
-            var mimeMessage = new MimeMessage();
-            var senderEmail = !string.IsNullOrWhiteSpace(_settings.Email) ? _settings.Email : _settings.SenderEmail;
-            var displayName = !string.IsNullOrWhiteSpace(_settings.DisplayName) ? _settings.DisplayName : _settings.SenderName;
-            var smtpHost = !string.IsNullOrWhiteSpace(_settings.Host) ? _settings.Host : _settings.SmtpServer;
+            var primaryOptions = configuredPort == 465
+                ? SecureSocketOptions.SslOnConnect
+                : (configuredPort == 587
+                    ? SecureSocketOptions.StartTls
+                    : (_settings.EnableSSL ? SecureSocketOptions.StartTls : SecureSocketOptions.Auto));
 
-            mimeMessage.From.Add(new MailboxAddress(displayName, senderEmail));
-            mimeMessage.To.Add(MailboxAddress.Parse(notification.ToEmail));
-            mimeMessage.Subject = notification.Subject;
+            _logger?.LogInformation("Connecting to SMTP host {Host}:{Port} via MailKit ({Option})...", smtpHost, configuredPort, primaryOptions);
+            await client.ConnectAsync(smtpHost, configuredPort, primaryOptions);
+            connected = true;
+        }
+        catch (Exception primaryEx)
+        {
+            _logger?.LogWarning(primaryEx, "SMTP Connection failed for {Host}:{Port}. Attempting fallback port...", smtpHost, configuredPort);
 
-            mimeMessage.Body = new TextPart(TextFormat.Html)
+            // Fallback attempt: if 587 failed, try 465 (SslOnConnect); if 465 failed, try 587 (StartTls)
+            int fallbackPort = configuredPort == 587 ? 465 : 587;
+            var fallbackOptions = fallbackPort == 465 ? SecureSocketOptions.SslOnConnect : SecureSocketOptions.StartTls;
+
+            try
             {
-                Text = notification.Body
-            };
+                _logger?.LogInformation("Connecting to fallback SMTP host {Host}:{Port} via MailKit ({Option})...", smtpHost, fallbackPort, fallbackOptions);
+                await client.ConnectAsync(smtpHost, fallbackPort, fallbackOptions);
+                connected = true;
+            }
+            catch (Exception fallbackEx)
+            {
+                _logger?.LogError(fallbackEx, "SMTP Fallback connection to {Host}:{Port} also failed.", smtpHost, fallbackPort);
+                throw new Exception($"SMTP connection failed on port {configuredPort} and fallback port {fallbackPort}: {primaryEx.Message}", primaryEx);
+            }
+        }
 
-            using var client = new SmtpClient();
-
-            var secureSocketOption = _settings.EnableSSL
-                ? SecureSocketOptions.StartTls
-                : SecureSocketOptions.Auto;
-
-            var port = _settings.Port > 0 ? _settings.Port : 587;
-
-            _logger?.LogInformation("Connecting to SMTP host {Host}:{Port} via MailKit...", smtpHost, port);
-
-            await client.ConnectAsync(smtpHost, port, secureSocketOption);
-
-            var cleanPassword = (_settings.Password ?? "").Replace(" ", "");
+        if (connected)
+        {
             if (!string.IsNullOrEmpty(senderEmail) && !string.IsNullOrEmpty(cleanPassword))
             {
                 await client.AuthenticateAsync(senderEmail.Trim(), cleanPassword);
@@ -119,14 +149,7 @@ public class EmailService : IEmailService
 
             await client.SendAsync(mimeMessage);
             await client.DisconnectAsync(true);
-
             _logger?.LogInformation("Email successfully dispatched to {ToEmail} with Subject: {Subject}", notification.ToEmail, notification.Subject);
-        }
-        catch (Exception ex)
-        {
-            _logger?.LogError(ex, "MailKit SmtpClient failed for {ToEmail}: {Message}", notification.ToEmail, ex.Message);
-            Console.WriteLine($"[EMAIL NOTICE] Failed to send live SMTP email to {notification.ToEmail}: {ex.Message}");
-            // Logged error gracefully - continue execution without crashing application
         }
     }
 
