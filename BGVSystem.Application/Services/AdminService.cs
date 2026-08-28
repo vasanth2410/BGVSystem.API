@@ -92,7 +92,7 @@ public class AdminService : IAdminService
             .ToList();
     }
 
-    public async Task<string> CreateReviewerAsync(CreateReviewerDto dto)
+    public async Task<CreateReviewerResultDto> CreateReviewerAsync(CreateReviewerDto dto)
     {
         if (string.IsNullOrWhiteSpace(dto.Email) || string.IsNullOrWhiteSpace(dto.FullName))
         {
@@ -145,7 +145,13 @@ public class AdminService : IAdminService
                 "Admin");
         }
 
-        return "Reviewer account created successfully and invitation email sent.";
+        return new CreateReviewerResultDto
+        {
+            Message = "Reviewer account created successfully.",
+            FullName = reviewerUser.FullName,
+            Email = reviewerUser.Email,
+            TemporaryPassword = tempPassword
+        };
     }
 
     private static string GenerateTemporaryPassword()

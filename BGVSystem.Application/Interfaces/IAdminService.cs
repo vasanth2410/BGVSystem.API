@@ -13,6 +13,6 @@ namespace BGVSystem.Application.Interfaces
 
         Task<List<ReviewerDto>> GetReviewersAsync();
 
-        Task<string> CreateReviewerAsync(CreateReviewerDto dto);
+        Task<CreateReviewerResultDto> CreateReviewerAsync(CreateReviewerDto dto);
     }
 }
