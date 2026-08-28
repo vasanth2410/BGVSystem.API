@@ -20,6 +20,10 @@ namespace BGVSystem.Infrastructure.Settings
 
         public bool EnableSSL { get; set; } = true;
 
+        public string ResendApiKey { get; set; } = string.Empty;
+
+        public string BrevoApiKey { get; set; } = string.Empty;
+
         // Backwards-compatibility property aliases
         public string SmtpServer
         {

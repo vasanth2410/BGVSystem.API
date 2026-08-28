@@ -37,6 +37,7 @@ public class EmailService : IEmailService
             Subject = dto.Subject,
             Body = dto.Body,
             Status = "Pending",
+            MaxRetryCount = 3,
             CreatedAt = DateTime.UtcNow
         };
 
