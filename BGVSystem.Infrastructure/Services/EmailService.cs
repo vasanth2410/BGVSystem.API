@@ -84,6 +84,15 @@ public class EmailService : IEmailService
 
     public async Task SendEmailDirectAsync(Notification notification)
     {
+        // 1. If HTTP API Key is configured, prioritize HTTP API (Port 443 HTTPS - never blocked by cloud firewalls)
+        if (!string.IsNullOrWhiteSpace(_settings.ResendApiKey) || !string.IsNullOrWhiteSpace(_settings.BrevoApiKey))
+        {
+            if (await TrySendViaHttpApiAsync(notification))
+            {
+                return;
+            }
+        }
+
         var smtpHost = !string.IsNullOrWhiteSpace(_settings.Host) ? _settings.Host : _settings.SmtpServer;
         if (string.IsNullOrWhiteSpace(smtpHost))
         {
@@ -103,7 +112,7 @@ public class EmailService : IEmailService
         var cleanPassword = (_settings.Password ?? "").Replace(" ", "");
 
         using var client = new SmtpClient();
-        client.Timeout = 12000; // 12 seconds timeout per attempt
+        client.Timeout = 10000; // 10 seconds timeout per attempt
 
         bool connected = false;
 
@@ -137,7 +146,14 @@ public class EmailService : IEmailService
             catch (Exception fallbackEx)
             {
                 _logger?.LogError(fallbackEx, "SMTP Fallback connection to {Host}:{Port} also failed.", smtpHost, fallbackPort);
-                throw new Exception($"SMTP connection failed on port {configuredPort} and fallback port {fallbackPort}: {primaryEx.Message}", primaryEx);
+
+                // Fallback 3: Attempt HTTP REST API if available
+                if (await TrySendViaHttpApiAsync(notification))
+                {
+                    return;
+                }
+
+                throw new Exception($"SMTP connection failed on port {configuredPort} and fallback port {fallbackPort} (Cloud host firewall blocks outbound SMTP sockets). Add ResendApiKey or BrevoApiKey to EmailSettings for HTTP email delivery: {primaryEx.Message}", primaryEx);
             }
         }
 
@@ -152,6 +168,92 @@ public class EmailService : IEmailService
             await client.DisconnectAsync(true);
             _logger?.LogInformation("Email successfully dispatched to {ToEmail} with Subject: {Subject}", notification.ToEmail, notification.Subject);
         }
+    }
+
+    private async Task<bool> TrySendViaHttpApiAsync(Notification notification)
+    {
+        var senderEmail = !string.IsNullOrWhiteSpace(_settings.Email) ? _settings.Email : _settings.SenderEmail;
+        var displayName = !string.IsNullOrWhiteSpace(_settings.DisplayName) ? _settings.DisplayName : _settings.SenderName;
+
+        using var httpClient = new System.Net.Http.HttpClient();
+        httpClient.Timeout = TimeSpan.FromSeconds(15);
+
+        // 1. Try Resend HTTP API (Port 443 - HTTPS)
+        if (!string.IsNullOrWhiteSpace(_settings.ResendApiKey))
+        {
+            try
+            {
+                _logger?.LogInformation("Attempting email dispatch to {ToEmail} via Resend HTTP API...", notification.ToEmail);
+                httpClient.DefaultRequestHeaders.Clear();
+                httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", _settings.ResendApiKey.Trim());
+
+                var resendFrom = senderEmail.EndsWith("@resend.dev") ? senderEmail : $"{displayName} <onboarding@resend.dev>";
+                var bodyObj = new
+                {
+                    from = resendFrom,
+                    to = new[] { notification.ToEmail },
+                    subject = notification.Subject,
+                    html = notification.Body
+                };
+
+                var jsonContent = new System.Net.Http.StringContent(System.Text.Json.JsonSerializer.Serialize(bodyObj), System.Text.Encoding.UTF8, "application/json");
+                var response = await httpClient.PostAsync("https://api.resend.com/emails", jsonContent);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    _logger?.LogInformation("Email successfully sent to {ToEmail} via Resend HTTP API.", notification.ToEmail);
+                    return true;
+                }
+                else
+                {
+                    var err = await response.Content.ReadAsStringAsync();
+                    _logger?.LogWarning("Resend HTTP API returned status {Code}: {Response}", response.StatusCode, err);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogWarning(ex, "Resend HTTP API dispatch failed for {ToEmail}.", notification.ToEmail);
+            }
+        }
+
+        // 2. Try Brevo HTTP API (Port 443 - HTTPS)
+        if (!string.IsNullOrWhiteSpace(_settings.BrevoApiKey))
+        {
+            try
+            {
+                _logger?.LogInformation("Attempting email dispatch to {ToEmail} via Brevo HTTP API...", notification.ToEmail);
+                httpClient.DefaultRequestHeaders.Clear();
+                httpClient.DefaultRequestHeaders.Add("api-key", _settings.BrevoApiKey.Trim());
+
+                var bodyObj = new
+                {
+                    sender = new { name = displayName, email = senderEmail },
+                    to = new[] { new { email = notification.ToEmail } },
+                    subject = notification.Subject,
+                    htmlContent = notification.Body
+                };
+
+                var jsonContent = new System.Net.Http.StringContent(System.Text.Json.JsonSerializer.Serialize(bodyObj), System.Text.Encoding.UTF8, "application/json");
+                var response = await httpClient.PostAsync("https://api.brevo.com/v3/smtp/email", jsonContent);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    _logger?.LogInformation("Email successfully sent to {ToEmail} via Brevo HTTP API.", notification.ToEmail);
+                    return true;
+                }
+                else
+                {
+                    var err = await response.Content.ReadAsStringAsync();
+                    _logger?.LogWarning("Brevo HTTP API returned status {Code}: {Response}", response.StatusCode, err);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogWarning(ex, "Brevo HTTP API dispatch failed for {ToEmail}.", notification.ToEmail);
+            }
+        }
+
+        return false;
     }
 
     #region 10 Enterprise Email Notification Methods
