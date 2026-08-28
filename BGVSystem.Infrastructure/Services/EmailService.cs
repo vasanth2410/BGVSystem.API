@@ -217,13 +217,17 @@ public class EmailService : IEmailService
         }
 
         // 2. Try Brevo HTTP API (Port 443 - HTTPS)
-        if (!string.IsNullOrWhiteSpace(_settings.BrevoApiKey))
+        var brevoKey = !string.IsNullOrWhiteSpace(_settings.BrevoApiKey)
+            ? _settings.BrevoApiKey
+            : (Environment.GetEnvironmentVariable("BrevoApiKey") ?? Environment.GetEnvironmentVariable("EmailSettings__BrevoApiKey"));
+
+        if (!string.IsNullOrWhiteSpace(brevoKey))
         {
             try
             {
                 _logger?.LogInformation("Attempting email dispatch to {ToEmail} via Brevo HTTP API...", notification.ToEmail);
                 httpClient.DefaultRequestHeaders.Clear();
-                httpClient.DefaultRequestHeaders.Add("api-key", _settings.BrevoApiKey.Trim());
+                httpClient.DefaultRequestHeaders.Add("api-key", brevoKey.Trim());
 
                 var bodyObj = new
                 {
