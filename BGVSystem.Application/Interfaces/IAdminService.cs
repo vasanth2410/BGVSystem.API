@@ -1,4 +1,4 @@
-﻿using BGVSystem.Application.DTOs.Admin;
+using BGVSystem.Application.DTOs.Admin;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,5 +12,7 @@ namespace BGVSystem.Application.Interfaces
         Task<AdminDashboardDto> GetDashboardAsync();
 
         Task<List<ReviewerDto>> GetReviewersAsync();
+
+        Task<string> CreateReviewerAsync(CreateReviewerDto dto);
     }
 }

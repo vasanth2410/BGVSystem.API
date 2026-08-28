@@ -9,4 +9,6 @@ public class AuthResponseDto
     public string Role { get; set; } = string.Empty;
 
     public string FullName { get; set; } = string.Empty;
+
+    public bool MustChangePassword { get; set; } = false;
 }

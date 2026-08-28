@@ -39,7 +39,8 @@ public class AuthService : IAuthService
         var hashedPassword =
             BCrypt.Net.BCrypt.HashPassword(dto.Password);
 
-        int targetRoleId = dto.RoleId <= 0 ? 3 : dto.RoleId;
+        // Public registration is strictly restricted to Candidates (RoleId = 3)
+        int targetRoleId = 3;
 
         var user = new User
         {
@@ -112,7 +113,45 @@ public class AuthService : IAuthService
             Token = token,
             Email = user.Email,
             Role = user.Role.Name,
-            FullName = user.FullName
+            FullName = user.FullName,
+            MustChangePassword = user.MustChangePassword
         };
+    }
+
+    public async Task<string> ChangePasswordAsync(ChangePasswordDto dto)
+    {
+        if (string.IsNullOrWhiteSpace(dto.Email) || string.IsNullOrWhiteSpace(dto.NewPassword))
+        {
+            throw new Exception("Email and new password are required.");
+        }
+
+        var cleanEmail = dto.Email.Trim().ToLower();
+        var user = await _userRepository.GetByEmailAsync(cleanEmail);
+
+        if (user == null)
+        {
+            throw new Exception("User not found.");
+        }
+
+        if (!string.IsNullOrWhiteSpace(dto.CurrentPassword))
+        {
+            var isCurrentValid = BCrypt.Net.BCrypt.Verify(dto.CurrentPassword, user.PasswordHash);
+            if (!isCurrentValid)
+            {
+                throw new UnauthorizedException("Invalid current password.");
+            }
+        }
+
+        user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.NewPassword);
+        user.MustChangePassword = false;
+
+        await _userRepository.SaveChangesAsync();
+
+        await _auditService.AddLogAsync(
+            "User Changed Password",
+            user.Email,
+            user.Role?.Name ?? "User");
+
+        return "Password changed successfully.";
     }
 }

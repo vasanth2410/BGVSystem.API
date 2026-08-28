@@ -197,11 +197,38 @@ using (var scope = app.Services.CreateScope())
                 SET IDENTITY_INSERT Roles OFF;
             END
         ");
+
+        // Seed Initial Admin User if no Admin account exists
+        var adminEmail = Environment.GetEnvironmentVariable("INITIAL_ADMIN_EMAIL")
+            ?? builder.Configuration["InitialAdmin:Email"]
+            ?? "admin@bgvsystem.com";
+
+        var adminPassword = Environment.GetEnvironmentVariable("INITIAL_ADMIN_PASSWORD")
+            ?? builder.Configuration["InitialAdmin:Password"]
+            ?? "Admin@12345";
+
+        var cleanAdminEmail = adminEmail.Trim().ToLower();
+        var adminExists = dbContext.Users.Any(u => u.RoleId == 1 || u.Email.ToLower() == cleanAdminEmail);
+        if (!adminExists)
+        {
+            var adminUser = new BGVSystem.Domain.Entities.User
+            {
+                FullName = "System Admin",
+                Email = cleanAdminEmail,
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword(adminPassword),
+                RoleId = 1,
+                CreatedDate = DateTime.UtcNow
+            };
+            dbContext.Users.Add(adminUser);
+            dbContext.SaveChanges();
+            var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+            logger.LogInformation("Initial Admin user account provisioned successfully for {Email}", cleanAdminEmail);
+        }
     }
     catch (Exception ex)
     {
         var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
-        logger.LogError(ex, "An error occurred while applying database migrations or seeding roles on startup.");
+        logger.LogError(ex, "An error occurred while applying database migrations or seeding roles/admin on startup.");
     }
 }
 

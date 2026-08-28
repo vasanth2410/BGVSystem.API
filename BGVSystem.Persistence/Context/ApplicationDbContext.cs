@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using BGVSystem.Domain.Entities;
 
 namespace BGVSystem.Persistence.Context;
@@ -36,5 +36,9 @@ public class ApplicationDbContext : DbContext
 
         modelBuilder.Entity<Candidate>()
             .HasQueryFilter(x => !x.IsDeleted);
+
+        modelBuilder.Entity<User>()
+            .Property(u => u.MustChangePassword)
+            .HasDefaultValue(false);
     }
 }

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -20,5 +20,7 @@ namespace BGVSystem.Domain.Entities
         public Role Role { get; set; } = null!;
 
         public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
+
+        public bool MustChangePassword { get; set; } = false;
     }
 }

@@ -92,4 +92,11 @@ public class AuthController : ControllerBase
 
         return Ok("Password reset successfully.");
     }
+
+    [HttpPost("change-password")]
+    public async Task<IActionResult> ChangePassword([FromBody] BGVSystem.Application.DTOs.Auth.ChangePasswordDto dto)
+    {
+        var result = await _authService.ChangePasswordAsync(dto);
+        return Ok(result);
+    }
 }

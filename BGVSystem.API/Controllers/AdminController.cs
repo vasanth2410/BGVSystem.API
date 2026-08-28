@@ -1,4 +1,4 @@
-﻿using BGVSystem.Application.Interfaces;
+using BGVSystem.Application.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -35,6 +35,13 @@ public class AdminController : ControllerBase
             await _adminService
                 .GetReviewersAsync();
 
+        return Ok(result);
+    }
+
+    [HttpPost("reviewers")]
+    public async Task<IActionResult> CreateReviewer([FromBody] BGVSystem.Application.DTOs.Admin.CreateReviewerDto dto)
+    {
+        var result = await _adminService.CreateReviewerAsync(dto);
         return Ok(result);
     }
 }
