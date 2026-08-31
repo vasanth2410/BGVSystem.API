@@ -249,6 +249,10 @@ public class CandidateService : ICandidateService
         candidate.AadhaarNumber = dto.AadhaarNumber;
         candidate.AppliedRole = dto.AppliedRole;
         candidate.DateOfJoining = dto.DateOfJoining;
+        if (!string.IsNullOrWhiteSpace(dto.Status))
+        {
+            candidate.Status = dto.Status;
+        }
 
         await _candidateRepository.UpdateAsync(candidate);
 
