@@ -260,11 +260,27 @@ public class EmailService : IEmailService
         return false;
     }
 
+    private string GetFrontendLoginUrl()
+    {
+        var baseUrl = Environment.GetEnvironmentVariable("FRONTEND_URL")
+            ?? Environment.GetEnvironmentVariable("ClientUrl")
+            ?? Environment.GetEnvironmentVariable("AppUrl")
+            ?? _settings?.FrontendUrl;
+
+        if (string.IsNullOrWhiteSpace(baseUrl))
+        {
+            baseUrl = "https://bgv-project-frontend.vercel.app";
+        }
+
+        return $"{baseUrl.TrimEnd('/')}/login";
+    }
+
     #region 10 Enterprise Email Notification Methods
 
     // 1. Candidate Created
     public async Task SendWelcomeEmailAsync(string candidateEmail, string candidateName, string temporaryPassword)
     {
+        var loginUrl = GetFrontendLoginUrl();
         var subject = "Welcome to BGV Portal";
         var message = $@"
             <p>Welcome to the <strong>Enterprise Background Verification (BGV) System</strong>.</p>
@@ -282,7 +298,7 @@ public class EmailService : IEmailService
             badgeText: "ACCOUNT CREATED",
             badgeColor: "#2563eb",
             actionButtonText: "Log In to BGV Portal",
-            actionButtonUrl: "#"
+            actionButtonUrl: loginUrl
         );
 
         await SendEmailAsync(new SendEmailDto { To = candidateEmail, Subject = subject, Body = html });
@@ -291,6 +307,7 @@ public class EmailService : IEmailService
     // 2. Admin Requests Documents
     public async Task SendDocumentRequestEmailAsync(string candidateEmail, string candidateName, string documentType, string remarks = "")
     {
+        var loginUrl = GetFrontendLoginUrl();
         var subject = "Documents Required for Background Verification";
         var remarksBlock = string.IsNullOrWhiteSpace(remarks) ? "" : $"<p><strong>Notes / Instructions:</strong> {remarks}</p>";
         var message = $@"
@@ -308,7 +325,7 @@ public class EmailService : IEmailService
             badgeText: "ACTION REQUIRED",
             badgeColor: "#d97706",
             actionButtonText: "Upload Documents Now",
-            actionButtonUrl: "#"
+            actionButtonUrl: loginUrl
         );
 
         await SendEmailAsync(new SendEmailDto { To = candidateEmail, Subject = subject, Body = html });
@@ -317,6 +334,7 @@ public class EmailService : IEmailService
     // 3. Candidate Uploads Documents
     public async Task SendDocumentsUploadedEmailAsync(string candidateEmail, string candidateName)
     {
+        var loginUrl = GetFrontendLoginUrl();
         var subject = "Documents Uploaded Successfully";
         var message = $@"
             <p>Thank you for submitting your verification documents.</p>
@@ -330,7 +348,7 @@ public class EmailService : IEmailService
             badgeText: "DOCUMENTS RECEIVED",
             badgeColor: "#059669",
             actionButtonText: "View Portal Status",
-            actionButtonUrl: "#"
+            actionButtonUrl: loginUrl
         );
 
         await SendEmailAsync(new SendEmailDto { To = candidateEmail, Subject = subject, Body = html });
@@ -339,6 +357,7 @@ public class EmailService : IEmailService
     // 4. Reviewer Starts Verification
     public async Task SendVerificationStartedEmailAsync(string candidateEmail, string candidateName, string verificationType)
     {
+        var loginUrl = GetFrontendLoginUrl();
         var subject = "Background Verification Started";
         var message = $@"
             <p>This is an automated notification to inform you that your <strong>{verificationType}</strong> background verification process has officially commenced.</p>
@@ -351,7 +370,7 @@ public class EmailService : IEmailService
             badgeText: "IN PROGRESS",
             badgeColor: "#0284c7",
             actionButtonText: "Track Verification",
-            actionButtonUrl: "#"
+            actionButtonUrl: loginUrl
         );
 
         await SendEmailAsync(new SendEmailDto { To = candidateEmail, Subject = subject, Body = html });
@@ -360,6 +379,7 @@ public class EmailService : IEmailService
     // 5. Reviewer Requests Additional Documents
     public async Task SendAdditionalDocumentsRequiredEmailAsync(string candidateEmail, string candidateName, string requestedDocuments, string remarks)
     {
+        var loginUrl = GetFrontendLoginUrl();
         var subject = "Additional Documents Required";
         var message = $@"
             <p>During our review of your background verification file, our verification team identified additional document requirements.</p>
@@ -376,7 +396,7 @@ public class EmailService : IEmailService
             badgeText: "ATTENTION NEEDED",
             badgeColor: "#ea580c",
             actionButtonText: "Upload Additional Documents",
-            actionButtonUrl: "#"
+            actionButtonUrl: loginUrl
         );
 
         await SendEmailAsync(new SendEmailDto { To = candidateEmail, Subject = subject, Body = html });
@@ -385,6 +405,7 @@ public class EmailService : IEmailService
     // 6. Verification Completed
     public async Task SendVerificationCompletedEmailAsync(string candidateEmail, string candidateName, string overallStatus)
     {
+        var loginUrl = GetFrontendLoginUrl();
         var subject = "Background Verification Completed";
         var message = $@"
             <p>We are pleased to inform you that your background verification checks have been fully completed by our verification team.</p>
@@ -398,7 +419,7 @@ public class EmailService : IEmailService
             badgeText: "COMPLETED",
             badgeColor: "#16a34a",
             actionButtonText: "Check Final Details",
-            actionButtonUrl: "#"
+            actionButtonUrl: loginUrl
         );
 
         await SendEmailAsync(new SendEmailDto { To = candidateEmail, Subject = subject, Body = html });
@@ -407,6 +428,7 @@ public class EmailService : IEmailService
     // 7. Admin Approves Candidate
     public async Task SendVerificationApprovedEmailAsync(string candidateEmail, string candidateName, string remarks = "")
     {
+        var loginUrl = GetFrontendLoginUrl();
         var subject = "Background Verification Approved";
         var remarksBlock = string.IsNullOrWhiteSpace(remarks) ? "" : $"<p><strong>Comments:</strong> {remarks}</p>";
         var message = $@"
@@ -421,7 +443,7 @@ public class EmailService : IEmailService
             badgeText: "APPROVED",
             badgeColor: "#16a34a",
             actionButtonText: "Go to Portal",
-            actionButtonUrl: "#"
+            actionButtonUrl: loginUrl
         );
 
         await SendEmailAsync(new SendEmailDto { To = candidateEmail, Subject = subject, Body = html });
@@ -430,6 +452,7 @@ public class EmailService : IEmailService
     // 8. Admin Rejects Candidate
     public async Task SendVerificationRejectedEmailAsync(string candidateEmail, string candidateName, string reason)
     {
+        var loginUrl = GetFrontendLoginUrl();
         var subject = "Background Verification Rejected";
         var message = $@"
             <p>We regret to inform you that your background verification status has been updated to <strong>REJECTED</strong>.</p>
@@ -445,7 +468,7 @@ public class EmailService : IEmailService
             badgeText: "REJECTED",
             badgeColor: "#dc2626",
             actionButtonText: "Contact Support",
-            actionButtonUrl: "#"
+            actionButtonUrl: loginUrl
         );
 
         await SendEmailAsync(new SendEmailDto { To = candidateEmail, Subject = subject, Body = html });
@@ -454,6 +477,7 @@ public class EmailService : IEmailService
     // 9. PDF Report Ready
     public async Task SendPdfReportReadyEmailAsync(string candidateEmail, string candidateName, string reportRefOrUrl)
     {
+        var loginUrl = GetFrontendLoginUrl();
         var subject = "Your Verification Report is Ready";
         var message = $@"
             <p>Your official Background Verification Summary Report has been generated and is now ready for viewing and download.</p>
@@ -469,7 +493,7 @@ public class EmailService : IEmailService
             badgeText: "REPORT READY",
             badgeColor: "#4f46e5",
             actionButtonText: "Download PDF Report",
-            actionButtonUrl: "#"
+            actionButtonUrl: loginUrl
         );
 
         await SendEmailAsync(new SendEmailDto { To = candidateEmail, Subject = subject, Body = html });
@@ -478,6 +502,7 @@ public class EmailService : IEmailService
     // 10. Forgot Password
     public async Task SendPasswordResetEmailAsync(string candidateEmail, string candidateName, string resetTokenOrLink)
     {
+        var loginUrl = GetFrontendLoginUrl();
         var subject = "Reset Your Password";
         var message = $@"
             <p>We received a request to reset the password for your BGV System account.</p>
@@ -494,7 +519,7 @@ public class EmailService : IEmailService
             badgeText: "SECURITY ALERT",
             badgeColor: "#4f46e5",
             actionButtonText: "Reset Password Now",
-            actionButtonUrl: "#"
+            actionButtonUrl: loginUrl
         );
 
         await SendEmailAsync(new SendEmailDto { To = candidateEmail, Subject = subject, Body = html });
@@ -513,9 +538,13 @@ public class EmailService : IEmailService
         string actionButtonText = null,
         string actionButtonUrl = null)
     {
+        var targetUrl = (string.IsNullOrWhiteSpace(actionButtonUrl) || actionButtonUrl == "#")
+            ? GetFrontendLoginUrl()
+            : actionButtonUrl;
+
         var buttonHtml = string.IsNullOrWhiteSpace(actionButtonText) ? "" : $@"
             <div style='text-align: center; margin: 28px 0 16px 0;'>
-                <a href='{(string.IsNullOrWhiteSpace(actionButtonUrl) ? "#" : actionButtonUrl)}' 
+                <a href='{targetUrl}' 
                    style='background-color: #1e40af; color: #ffffff; text-decoration: none; padding: 12px 28px; font-weight: 600; font-size: 14px; border-radius: 6px; display: inline-block; box-shadow: 0 2px 4px rgba(0,0,0,0.1);'>
                    {actionButtonText}
                 </a>

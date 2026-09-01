@@ -1,4 +1,6 @@
 using BGVSystem.Application.Interfaces;
+using BGVSystem.Infrastructure.Settings;
+using Microsoft.Extensions.Options;
 using System;
 using System.IO;
 using System.Threading.Tasks;
@@ -7,11 +9,34 @@ namespace BGVSystem.Infrastructure.Services
 {
     public class EmailTemplateService : IEmailTemplateService
     {
+        private readonly EmailSettings _settings;
+
+        public EmailTemplateService(IOptions<EmailSettings> options = null)
+        {
+            _settings = options?.Value ?? new EmailSettings();
+        }
+
+        private string GetLoginUrl()
+        {
+            var baseUrl = Environment.GetEnvironmentVariable("FRONTEND_URL")
+                ?? Environment.GetEnvironmentVariable("ClientUrl")
+                ?? Environment.GetEnvironmentVariable("AppUrl")
+                ?? _settings?.FrontendUrl;
+
+            if (string.IsNullOrWhiteSpace(baseUrl))
+            {
+                baseUrl = "https://bgv-project-frontend.vercel.app";
+            }
+
+            return $"{baseUrl.TrimEnd('/')}/login";
+        }
+
         public async Task<string> GetWelcomeTemplateAsync(
             string fullName,
             string email,
             string password)
         {
+            var loginUrl = GetLoginUrl();
             var path = Path.Combine(
                 Directory.GetCurrentDirectory(),
                 "EmailTemplates",
@@ -23,7 +48,11 @@ namespace BGVSystem.Infrastructure.Services
                 return html
                     .Replace("{{FullName}}", fullName)
                     .Replace("{{Email}}", email)
-                    .Replace("{{Password}}", password);
+                    .Replace("{{Password}}", password)
+                    .Replace("http://localhost:3000/login", loginUrl)
+                    .Replace("http://localhost:5173/login", loginUrl)
+                    .Replace("{{PortalUrl}}", loginUrl)
+                    .Replace("{{LoginUrl}}", loginUrl);
             }
 
             // Fallback rich HTML template
@@ -52,7 +81,7 @@ namespace BGVSystem.Infrastructure.Services
         <div class='cred-item'>🔑 Temporary Password: <b>{password}</b></div>
       </div>
       <p>Click below to log in and change your password:</p>
-      <a href='http://localhost:5173/login' class='btn'>Login to BGV Portal →</a>
+      <a href='{loginUrl}' class='btn'>Login to BGV Portal →</a>
       <p style='margin-top: 25px; font-size: 13px; color: #64748b;'>Regards,<br/><b>BGV Operations Team</b></p>
     </div>
   </div>
@@ -65,6 +94,7 @@ namespace BGVSystem.Infrastructure.Services
             string documentType,
             string remarks)
         {
+            var loginUrl = GetLoginUrl();
             return $@"
 <!DOCTYPE html>
 <html>
@@ -89,7 +119,7 @@ namespace BGVSystem.Infrastructure.Services
         <i>{remarks}</i>
       </div>
       <p>Please log into your candidate portal to upload a clear copy of the requested document.</p>
-      <a href='http://localhost:5173/login' class='btn'>Upload Document Now →</a>
+      <a href='{loginUrl}' class='btn'>Upload Document Now →</a>
       <p style='margin-top: 25px; font-size: 13px; color: #64748b;'>Regards,<br/><b>BGV Verification Team</b></p>
     </div>
   </div>
@@ -102,6 +132,7 @@ namespace BGVSystem.Infrastructure.Services
             string status,
             string remarks)
         {
+            var loginUrl = GetLoginUrl();
             string statusColor = status switch
             {
                 "Completed" or "Approved" or "Cleared" => "#22c55e",
@@ -133,7 +164,7 @@ namespace BGVSystem.Infrastructure.Services
       <div class='status-badge'>{status}</div>
       {(string.IsNullOrWhiteSpace(remarks) ? "" : $"<div class='remarks-box'><b>Remarks:</b> {remarks}</div>")}
       <p>You can check the full details of your verification process by logging into your portal account.</p>
-      <a href='http://localhost:5173/login' class='btn'>View Status Portal →</a>
+      <a href='{loginUrl}' class='btn'>View Status Portal →</a>
       <p style='margin-top: 25px; font-size: 13px; color: #64748b;'>Regards,<br/><b>BGV Operations Team</b></p>
     </div>
   </div>

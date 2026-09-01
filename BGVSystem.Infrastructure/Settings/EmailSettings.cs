@@ -24,6 +24,8 @@ namespace BGVSystem.Infrastructure.Settings
 
         public string BrevoApiKey { get; set; } = string.Empty;
 
+        public string FrontendUrl { get; set; } = "https://bgv-project-frontend.vercel.app";
+
         // Backwards-compatibility property aliases
         public string SmtpServer
         {
