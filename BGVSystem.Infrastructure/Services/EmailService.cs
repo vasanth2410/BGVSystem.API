@@ -304,6 +304,32 @@ public class EmailService : IEmailService
         await SendEmailAsync(new SendEmailDto { To = candidateEmail, Subject = subject, Body = html });
     }
 
+    // Candidate Profile Updated
+    public async Task SendCandidateUpdatedEmailAsync(string candidateEmail, string candidateName)
+    {
+        var loginUrl = GetFrontendLoginUrl();
+        var subject = "Candidate Profile Updated";
+        var message = $@"
+            <p>Your candidate profile information in the <strong>Enterprise Background Verification (BGV) System</strong> has been updated by the administration.</p>
+            <div style='background-color:#f1f5f9; border-left:4px solid #0284c7; padding:12px 16px; margin:16px 0; border-radius:4px;'>
+                <p style='margin:4px 0;'><strong>Account Email:</strong> {candidateEmail}</p>
+                <p style='margin:4px 0;'><strong>Status:</strong> Profile details updated successfully.</p>
+            </div>
+            <p>You can log into your candidate portal at any time to review your updated profile information and verification status.</p>";
+
+        var html = BuildHtmlTemplate(
+            title: "Candidate Profile Updated",
+            candidateName: candidateName,
+            messageHtml: message,
+            badgeText: "PROFILE UPDATED",
+            badgeColor: "#0284c7",
+            actionButtonText: "Log In to BGV Portal",
+            actionButtonUrl: loginUrl
+        );
+
+        await SendEmailAsync(new SendEmailDto { To = candidateEmail, Subject = subject, Body = html });
+    }
+
     // 2. Admin Requests Documents
     public async Task SendDocumentRequestEmailAsync(string candidateEmail, string candidateName, string documentType, string remarks = "")
     {

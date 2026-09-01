@@ -258,6 +258,18 @@ public class CandidateService : ICandidateService
 
         await _candidateRepository.SaveChangesAsync();
 
+        if (_emailService != null)
+        {
+            try
+            {
+                await _emailService.SendCandidateUpdatedEmailAsync(candidate.Email, candidate.FullName);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[CANDIDATE UPDATE EMAIL ERROR] {ex.Message}");
+            }
+        }
+
         return "Candidate updated successfully";
     }
 

@@ -17,6 +17,9 @@ namespace BGVSystem.Application.Interfaces
         // 1. Candidate Created
         Task SendWelcomeEmailAsync(string candidateEmail, string candidateName, string temporaryPassword);
 
+        // Candidate Updated
+        Task SendCandidateUpdatedEmailAsync(string candidateEmail, string candidateName);
+
         // 2. Admin Requests Documents
         Task SendDocumentRequestEmailAsync(string candidateEmail, string candidateName, string documentType, string remarks = "");
 
