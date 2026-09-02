@@ -33,7 +33,6 @@ namespace BGVSystem.API.Controllers
         }
 
         [HttpGet("candidate/{candidateId}/pdf")]
-        [AllowAnonymous]
         public async Task<IActionResult> DownloadCandidatePdfReport(int candidateId)
         {
             try
