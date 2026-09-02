@@ -1,4 +1,4 @@
-﻿using BGVSystem.Application.DTOs;
+using BGVSystem.Application.DTOs;
 using BGVSystem.Application.Exceptions;
 using BGVSystem.Application.Interfaces;
 using BGVSystem.Domain.Entities;
@@ -26,6 +26,7 @@ public class NotificationService : INotificationService
             Id = x.Id,
             ToEmail = x.ToEmail,
             Subject = x.Subject,
+            Body = x.Body,
             Status = x.Status,
             CreatedAt = x.CreatedAt,
             SentAt = x.SentAt
@@ -48,6 +49,7 @@ public class NotificationService : INotificationService
             Id = notification.Id,
             ToEmail = notification.ToEmail,
             Subject = notification.Subject,
+            Body = notification.Body,
             Status = notification.Status,
             CreatedAt = notification.CreatedAt,
             SentAt = notification.SentAt
@@ -64,6 +66,7 @@ public class NotificationService : INotificationService
             Id = x.Id,
             ToEmail = x.ToEmail,
             Subject = x.Subject,
+            Body = x.Body,
             Status = x.Status,
             CreatedAt = x.CreatedAt,
             SentAt = x.SentAt
@@ -83,6 +86,7 @@ public class NotificationService : INotificationService
                 Id = x.Id,
                 ToEmail = x.ToEmail,
                 Subject = x.Subject,
+                Body = x.Body,
                 Status = x.Status,
                 CreatedAt = x.CreatedAt,
                 SentAt = x.SentAt

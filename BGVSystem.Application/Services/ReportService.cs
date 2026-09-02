@@ -67,13 +67,13 @@ namespace BGVSystem.Application.Services
                 throw new KeyNotFoundException($"Candidate with ID {candidateId} not found");
             }
 
-            var verifications = _verificationRepository != null 
+            var verifications = (_verificationRepository != null 
                 ? await _verificationRepository.GetByCandidateIdAsync(candidateId) 
-                : new List<Domain.Entities.Verification>();
+                : null) ?? new List<Domain.Entities.Verification>();
 
-            var documents = _documentRepository != null 
+            var documents = (_documentRepository != null 
                 ? await _documentRepository.GetByCandidateIdAsync(candidateId) 
-                : new List<Domain.Entities.Document>();
+                : null) ?? new List<Domain.Entities.Document>();
 
             var pdfDocument = Document.Create(container =>
             {
@@ -82,7 +82,7 @@ namespace BGVSystem.Application.Services
                     page.Size(PageSizes.A4);
                     page.Margin(30);
                     page.PageColor(Colors.White);
-                    page.DefaultTextStyle(x => x.FontSize(10).FontFamily("Arial"));
+                    page.DefaultTextStyle(x => x.FontSize(10));
 
                     // HEADER
                     page.Header().Row(row =>
@@ -104,14 +104,18 @@ namespace BGVSystem.Application.Services
                     // CONTENT
                     page.Content().PaddingVertical(15).Column(column =>
                     {
-                        bool allDocsApproved = documents.Any() && documents.All(d => 
-                            (d.Status ?? "").Equals("Approved", StringComparison.OrdinalIgnoreCase) || 
-                            verifications.Any(v => (v.Status ?? "").Equals("Approved", StringComparison.OrdinalIgnoreCase) && 
-                                !string.IsNullOrEmpty(v.VerificationType) && 
-                                (v.VerificationType.Equals(d.FileName, StringComparison.OrdinalIgnoreCase) || v.VerificationType.Equals(d.OriginalFileName, StringComparison.OrdinalIgnoreCase)))
+                        bool allDocsApproved = documents != null && documents.Any() && documents.All(d => 
+                            d != null && (
+                                (d.Status ?? "").Equals("Approved", StringComparison.OrdinalIgnoreCase) || 
+                                verifications.Any(v => v != null && (v.Status ?? "").Equals("Approved", StringComparison.OrdinalIgnoreCase) && 
+                                    !string.IsNullOrEmpty(v.VerificationType) && 
+                                    (v.VerificationType.Equals(d.FileName ?? "", StringComparison.OrdinalIgnoreCase) || v.VerificationType.Equals(d.OriginalFileName ?? "", StringComparison.OrdinalIgnoreCase)))
+                            )
                         );
 
-                        bool isCandidateApproved = (candidate.Status ?? "").Equals("Approved", StringComparison.OrdinalIgnoreCase) || allDocsApproved || (verifications.Any() && verifications.All(v => (v.Status ?? "").Equals("Approved", StringComparison.OrdinalIgnoreCase)));
+                        bool isCandidateApproved = (candidate.Status ?? "").Equals("Approved", StringComparison.OrdinalIgnoreCase) 
+                            || allDocsApproved 
+                            || (verifications != null && verifications.Any() && verifications.All(v => v != null && (v.Status ?? "").Equals("Approved", StringComparison.OrdinalIgnoreCase)));
 
                         // Candidate Profile Box
                         column.Item().Background("#f8fafc").Border(1).BorderColor("#cbd5e1").Padding(12).Column(profileCol =>
@@ -163,7 +167,7 @@ namespace BGVSystem.Application.Services
 
                             foreach (var checkType in defaultTypes)
                             {
-                                var existing = verifications.FirstOrDefault(v => v.VerificationType != null && v.VerificationType.Equals(checkType, StringComparison.OrdinalIgnoreCase));
+                                var existing = verifications.FirstOrDefault(v => v != null && v.VerificationType != null && v.VerificationType.Equals(checkType, StringComparison.OrdinalIgnoreCase));
                                 string status = isCandidateApproved ? "Approved" : (existing?.Status ?? "In Progress");
                                 string remarks = isCandidateApproved ? "Verified and cleared by BGV Specialist reviewer." : (existing?.ReviewerRemarks ?? "Verification check initiated.");
 
@@ -177,9 +181,10 @@ namespace BGVSystem.Application.Services
                         });
 
                         // Verified Documents Section
-                        if (documents.Any())
+                        column.Item().PaddingTop(15).Text("VERIFIED DOCUMENTS ATTACHED").FontSize(11).Bold().FontColor("#1e293b");
+
+                        if (documents != null && documents.Any())
                         {
-                            column.Item().PaddingTop(15).Text("VERIFIED DOCUMENTS ATTACHED").FontSize(11).Bold().FontColor("#1e293b");
                             column.Item().PaddingTop(6).Table(table =>
                             {
                                 table.ColumnsDefinition(cols =>
@@ -198,18 +203,28 @@ namespace BGVSystem.Application.Services
 
                                 foreach (var doc in documents)
                                 {
+                                    if (doc == null) continue;
+
                                     var vMatch = verifications.FirstOrDefault(v => 
+                                        v != null &&
                                         !string.IsNullOrEmpty(v.VerificationType) && 
-                                        (v.VerificationType.Equals(doc.FileName, StringComparison.OrdinalIgnoreCase) || v.VerificationType.Equals(doc.OriginalFileName, StringComparison.OrdinalIgnoreCase))
+                                        (v.VerificationType.Equals(doc.FileName ?? "", StringComparison.OrdinalIgnoreCase) || v.VerificationType.Equals(doc.OriginalFileName ?? "", StringComparison.OrdinalIgnoreCase))
                                     );
 
-                                    string docEffStatus = (vMatch != null && vMatch.Status.Equals("Approved", StringComparison.OrdinalIgnoreCase)) || isCandidateApproved ? "Approved" : (doc.Status ?? "Uploaded");
+                                    string docEffStatus = ((vMatch != null && (vMatch.Status ?? "").Equals("Approved", StringComparison.OrdinalIgnoreCase)) || isCandidateApproved) ? "Approved" : (doc.Status ?? "Uploaded");
                                     string docStatusColor = docEffStatus.Equals("Approved", StringComparison.OrdinalIgnoreCase) ? "#16a34a" : "#d97706";
 
                                     table.Cell().BorderBottom(1).BorderColor("#e2e8f0").Padding(6).Text(doc.FileType ?? "Document").FontSize(9);
                                     table.Cell().BorderBottom(1).BorderColor("#e2e8f0").Padding(6).Text(doc.OriginalFileName ?? doc.FileName ?? "-").FontSize(9);
                                     table.Cell().BorderBottom(1).BorderColor("#e2e8f0").Padding(6).Text(docEffStatus).Bold().FontColor(docStatusColor).FontSize(9);
                                 }
+                            });
+                        }
+                        else
+                        {
+                            column.Item().PaddingTop(6).Background("#f8fafc").Border(1).BorderColor("#cbd5e1").Padding(10).Row(row =>
+                            {
+                                row.RelativeItem().Text("No documents uploaded yet. Document verification status is pending candidate submission.").FontSize(9).Italic().FontColor("#64748b");
                             });
                         }
 
@@ -244,13 +259,13 @@ namespace BGVSystem.Application.Services
 
             var pdfBytes = pdfDocument.GeneratePdf();
 
-            if (_emailService != null && candidate != null)
+            if (_emailService != null && candidate != null && !string.IsNullOrEmpty(candidate.Email))
             {
                 try
                 {
                     await _emailService.SendPdfReportReadyEmailAsync(
                         candidate.Email,
-                        candidate.FullName,
+                        candidate.FullName ?? "Candidate",
                         $"BGV-{candidate.Id:D6}");
                 }
                 catch (Exception ex)
