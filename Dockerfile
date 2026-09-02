@@ -12,7 +12,7 @@ WORKDIR "/src/BGVSystem.API"
 RUN dotnet publish "BGVSystem.API.csproj" -c Release -o /app/publish /p:UseAppHost=false
 
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS final
-RUN apt-get update && apt-get install -y libfontconfig1 libfreetype6 && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y libfontconfig1 libfreetype6 libglib2.0-0 fontconfig fonts-dejavu-core && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 COPY --from=build /app/publish .
 ENV PORT=8080
