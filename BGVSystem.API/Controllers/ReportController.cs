@@ -51,7 +51,7 @@ namespace BGVSystem.API.Controllers
             catch (Exception ex)
             {
                 Console.WriteLine($"[PDF ERROR] Exception generating PDF report for candidate {candidateId}: {ex}");
-                return StatusCode(500, new { Message = "Failed to generate PDF report", Error = ex.Message });
+                return StatusCode(500, new { Message = "Failed to generate PDF report", Error = ex.ToString() });
             }
         }
     }
