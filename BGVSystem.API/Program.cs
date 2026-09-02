@@ -16,6 +16,7 @@ Environment.SetEnvironmentVariable("DOTNET_USE_POLLING_FILE_WATCHER", "1");
 
 // Configure QuestPDF License
 QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
+QuestPDF.Settings.CheckIfFontExists = false;
 
 var builder = WebApplication.CreateBuilder(args);
 
