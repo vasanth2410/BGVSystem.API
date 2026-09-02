@@ -59,7 +59,14 @@ namespace BGVSystem.Application.Services
 
         public async Task<byte[]> GenerateCandidatePdfReportAsync(int candidateId)
         {
-            QuestPDF.Settings.License = LicenseType.Community;
+            try
+            {
+                QuestPDF.Settings.License = LicenseType.Community;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[QUESTPDF INIT NOTICE] {ex.Message}");
+            }
 
             var candidate = await _candidateRepository.GetByIdAsync(candidateId);
             if (candidate == null)
