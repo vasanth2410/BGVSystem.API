@@ -49,6 +49,7 @@ public class DocumentsController : ControllerBase
         return Ok("Document deleted successfully");
     }
 
+    [Authorize(Roles = "Admin")]
     [HttpGet("download/{id}")]
     public async Task<IActionResult> DownloadDocument(int id)
     {
