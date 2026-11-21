@@ -25,7 +25,7 @@ namespace BGVSystem.Infrastructure.Services
 
             if (string.IsNullOrWhiteSpace(baseUrl))
             {
-                baseUrl = "https://bgv-project-frontend.vercel.app";
+                baseUrl = "https://background-verification.rv-s.in";
             }
 
             return $"{baseUrl.TrimEnd('/')}/login";
@@ -51,6 +51,7 @@ namespace BGVSystem.Infrastructure.Services
                     .Replace("{{Password}}", password)
                     .Replace("http://localhost:3000/login", loginUrl)
                     .Replace("http://localhost:5173/login", loginUrl)
+                    .Replace("https://bgv-project-frontend.vercel.app/login", loginUrl)
                     .Replace("{{PortalUrl}}", loginUrl)
                     .Replace("{{LoginUrl}}", loginUrl);
             }

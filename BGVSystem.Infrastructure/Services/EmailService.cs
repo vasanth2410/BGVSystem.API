@@ -269,7 +269,7 @@ public class EmailService : IEmailService
 
         if (string.IsNullOrWhiteSpace(baseUrl))
         {
-            baseUrl = "https://bgv-project-frontend.vercel.app";
+            baseUrl = "https://background-verification.rv-s.in";
         }
 
         return $"{baseUrl.TrimEnd('/')}/login";
